@@ -1,7 +1,6 @@
-// TODO : csvee_update_row(csvee,row);
-// TODO : csvee_remove_row(csvee,row);
-// TODO : csvee_update_filed(csvee,row,col,value);
-// TODO : csvee_delete_field(csvee,row,col);
+// TODO: add bounch checking
+// TODO: add operator methods
+// TODO: typedef style for tsv method names
 
 #ifndef DJOEZEKE_CSVEE_H
 #define DJOEZEKE_CSVEE_H
@@ -98,19 +97,29 @@ int csv_field_to_integer(CsvField *field);
 char *csv_field_to_string(CsvField *field);
 int csv_field_to_boolean(CsvField *field);
 
+int (*tsv_field_to_integer)(CsvField *field) = &csv_field_to_integer;
+
 CsvField csvee_create_field(const char *value);
 void csvee_free_field(CsvField *field);
-const char *csvee_get_filed(Csvee *csvee, size_t row, size_t col);
+CsvField csvee_get_filed(Csvee *csvee, size_t row, size_t col);
 void csvee_print_field(const CsvField *field);
-int csvee_update_filed(Csvee *csvee, size_t row, size_t col, const char *value);
+int csvee_update_field(Csvee *csvee, size_t row, size_t col, const char *value);
+int csvee_delete_field(Csvee *csvee, size_t row, size_t col);
+int csvee_field_exist(Csvee *csvee, size_t row, size_t col);
+int csvee_field_equal(CsvField *field, CsvField *other);
 
 CsvRow csvee_create_row(size_t field_count);
 CsvRow csvee_get_row(Csvee *csvee, size_t row);
 void csvee_add_row(Csvee *csvee, size_t fields_count, ...);
 void csvee_free_row(CsvRow *row);
 void csvee_print_row(const CsvRow *row);
+int csvee_update_row(Csvee *csvee, size_t row, size_t fields_count, ...);
+int csvee_delete_row(Csvee *csvee, size_t row);
+int csvee_row_exist(Csvee *csvee, size_t row);
+int csvee_row_equal(CsvRow *row, CsvRow *other);
 
 Csvee csvee_create_csv();
+Csvee csvee_copy_csv(const Csvee *file);
 void csvee_print_csv(const Csvee *file);
 void csvee_free_csv(Csvee *file);
 
@@ -118,7 +127,6 @@ Csvee csvee_read_from_file(const char *filename);
 bool csvee_write_to_file(const Csvee *csvee, const char *filename);
 
 void csvee_error(CsvError error, const char *format, ...);
-
 const char *csvee_error_name(CsvError error);
 
 #pragma endregion // DECLARATIONS
@@ -153,7 +161,6 @@ int csv_field_to_integer(CsvField *field)
 
 char *csv_field_to_string(CsvField *field)
 {
-
     if (field == NULL)
     {
 #ifdef CSVEE_DEBUG
@@ -167,6 +174,7 @@ char *csv_field_to_string(CsvField *field)
 
 int csv_field_to_boolean(CsvField *field)
 {
+    int ret;
 
     if (field == NULL)
     {
@@ -177,13 +185,15 @@ int csv_field_to_boolean(CsvField *field)
     }
     if (strcmp(field->value, "0") == 0)
     {
-        return 0;
+        ret = 0;
     }
 
     if (strcmp(field->value, "1") == 0)
     {
-        return 1;
+        ret = 1;
     }
+
+    return ret;
 };
 
 // Function to create a CSV field
@@ -200,15 +210,16 @@ void csvee_free_field(CsvField *field)
     free(field->value);
 }
 
-const char *csvee_get_filed(Csvee *csvee, size_t row, size_t col)
+CsvField csvee_get_filed(Csvee *csvee, size_t row, size_t col)
 {
+    CsvField field = csvee_create_field("");
 
     if (csvee->count < row)
     {
 #ifdef CSVEE_DEBUG
         csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
 #endif // CSVEE_DEBUG
-        return NULL;
+        return field;
     }
 
     if (csvee->rows[row - 1].count < col)
@@ -216,10 +227,110 @@ const char *csvee_get_filed(Csvee *csvee, size_t row, size_t col)
 #ifdef CSVEE_DEBUG
         csvee_error(INVALID_FIELD, "Field (%d) : is out of range\n", col);
 #endif // CSVEE_DEBUG
-        return NULL;
+        return field;
     }
 
-    return csvee->rows[row - 1].fields[col - 1].value;
+    field.value = strdup(csvee->rows[row - 1].fields[col - 1].value);
+    return field;
+};
+
+void csvee_print_field(const CsvField *field)
+{
+    if (field == NULL)
+    {
+#ifdef CSVEE_DEBUG
+        csvee_error(NULL_FIELD, "Field is null.\n");
+#endif // CSVEE_DEBUG
+        return;
+    }
+    printf("%s", field->value);
+};
+
+int csvee_update_field(Csvee *csvee, size_t row, size_t col, const char *value)
+{
+    if (csvee->count < row)
+    {
+#ifdef CSVEE_DEBUG
+        csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
+#endif // CSVEE_DEBUG
+        return 0;
+    }
+
+    if (csvee->rows[row - 1].count < col)
+    {
+#ifdef CSVEE_DEBUG
+        csvee_error(INVALID_FIELD, "Field (%d) : is out of range\n", col);
+#endif // CSVEE_DEBUG
+        return 0;
+    }
+
+    csvee->rows[row - 1].fields[col - 1].value = strdup(value);
+    return 1;
+};
+
+int csvee_delete_field(Csvee *csvee, size_t row, size_t col)
+{
+    if (csvee == NULL)
+    {
+#ifdef CSVEE_DEBUG
+        csvee_error(NULL_FILE, "File is null\n");
+#endif // CSVEE_DEBUG
+        return 0;
+    }
+
+    if (csvee->count < row)
+    {
+#ifdef CSVEE_DEBUG
+        csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
+#endif // CSVEE_DEBUG
+        return 0;
+    }
+
+    if (csvee->rows[row - 1].count < col)
+    {
+#ifdef CSVEE_DEBUG
+        csvee_error(INVALID_FIELD, "Field (%d) : is out of range\n", col);
+#endif // CSVEE_DEBUG
+        return 0;
+    }
+
+    csvee->rows[row - 1].fields[col - 1].value = "";
+    csvee->rows[row - 1].count--;
+
+    return 1;
+};
+
+int csvee_field_exist(Csvee *csvee, size_t row, size_t col)
+{
+    if (csvee == NULL)
+    {
+#ifdef CSVEE_DEBUG
+        csvee_error(NULL_FILE, "File is null\n");
+#endif // CSVEE_DEBUG
+        return 0;
+    }
+
+    if (csvee->count < row)
+    {
+#ifdef CSVEE_DEBUG
+        csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
+#endif // CSVEE_DEBUG
+        return 0;
+    }
+
+    if (csvee->rows[row - 1].count < col)
+    {
+#ifdef CSVEE_DEBUG
+        csvee_error(INVALID_FIELD, "Field (%d) : is out of range\n", col);
+#endif // CSVEE_DEBUG
+        return 0;
+    }
+    return 1;
+};
+
+int csvee_field_equal(CsvField *field, CsvField *other)
+{
+    return strcmp(field->value, other->value) == 0;
 };
 
 // Function to create a CSV row
@@ -233,7 +344,8 @@ CsvRow csvee_create_row(size_t field_count)
 
 CsvRow csvee_get_row(Csvee *csvee, size_t row)
 {
-    CsvRow nrow;
+    CsvRow nrow = csvee_create_row(0);
+
     if (csvee->count < row)
     {
 #ifdef CSVEE_DEBUG
@@ -241,6 +353,7 @@ CsvRow csvee_get_row(Csvee *csvee, size_t row)
 #endif // CSVEE_DEBUG
         return nrow;
     }
+
     nrow = csvee->rows[row - 1];
     return nrow;
 };
@@ -279,8 +392,73 @@ void csvee_free_row(CsvRow *row)
     {
         csvee_free_field(&row->fields[i]);
     }
+
+    row->count = 0;
     free(row->fields);
 }
+
+void csvee_print_row(const CsvRow *row)
+{
+    for (size_t i = 0; i < row->count; i++)
+    {
+        csvee_print_field(&row->fields[i]);
+        if (i < row->count - 1)
+        {
+            printf("%c", CSVEE_SEPERATOR);
+        }
+    }
+    printf("\n");
+};
+
+int csvee_update_row(Csvee *csvee, size_t row, size_t fields_count, ...)
+{
+    va_list args;
+    va_start(args, fields_count);
+
+    for (size_t i = 0; i < fields_count; i++)
+    {
+        csvee->rows[row - 1].fields[i].value = strdup(va_arg(args, char *));
+    }
+
+    va_end(args);
+    return 1;
+};
+
+int csvee_delete_row(Csvee *csvee, size_t row)
+{
+    csvee_free_row(&csvee->rows[row - 1]);
+    return 1;
+};
+
+int csvee_row_exist(Csvee *csvee, size_t row)
+{
+    if (csvee->count < row)
+    {
+#ifdef CSVEE_DEBUG
+        csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
+#endif // CSVEE_DEBUG
+        return 0;
+    }
+    return 1;
+};
+
+int csvee_row_equal(CsvRow *row, CsvRow *other)
+{
+    if (row->count != other->count)
+    {
+        return 0;
+    }
+
+    for (size_t i = 0; i < row->count; i++)
+    {
+        if (!csvee_field_equal(&row->fields[i], &other->fields[i]))
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+};
 
 // Function to create a CSV file
 Csvee csvee_create_csv()
@@ -292,6 +470,24 @@ Csvee csvee_create_csv()
     return file;
 }
 
+Csvee csvee_copy_csv(const Csvee *file)
+{
+    Csvee copy = *file;
+    copy.count = file->count;
+    copy.rows = file->rows;
+    copy.size = file->size;
+    return copy;
+};
+
+// Function to print a CSV file (for demonstration purposes)
+void csvee_print_csv(const Csvee *file)
+{
+    for (size_t i = 0; i < file->count; i++)
+    {
+        csvee_print_row(&file->rows[i]);
+    }
+}
+
 // Function to free a CSV file
 void csvee_free_csv(Csvee *file)
 {
@@ -299,6 +495,8 @@ void csvee_free_csv(Csvee *file)
     {
         csvee_free_row(&file->rows[i]);
     }
+    file->count = 0;
+    file->size = 0;
     free(file->rows);
 }
 
@@ -408,48 +606,17 @@ bool csvee_write_to_file(const Csvee *csvee, const char *filename)
     return true;
 }
 
-void csvee_print_row(const CsvRow *row)
-{
-    for (size_t i = 0; i < row->count; i++)
-    {
-        csvee_print_field(&row->fields[i]);
-        if (i < row->count - 1)
-        {
-            printf("%c", CSVEE_SEPERATOR);
-        }
-    }
-    printf("\n");
-};
-
-int csvee_update_filed(Csvee *csvee, size_t row, size_t col, const char *value) {
-
-};
-
-void csvee_print_field(const CsvField *field)
-{
-    printf("%s", field->value);
-};
-
-// Function to print a CSV file (for demonstration purposes)
-void csvee_print_csv(const Csvee *file)
-{
-    for (size_t i = 0; i < file->count; i++)
-    {
-        csvee_print_row(&file->rows[i]);
-    }
-}
-
 void csvee_error(CsvError error, const char *format, ...)
 {
     if (format == NULL)
-        fprintf(stderr, " CSVEE [%i] : %s \n", error, csvee_error_name(error));
+        fprintf(stderr, "CSVEE [%i] : %s \n", error, csvee_error_name(error));
     else
     {
         va_list args;
 
         va_start(args, format);
 
-        fprintf(stderr, " CSVEE [%i] :", error);
+        fprintf(stderr, "CSVEE [%i] :", error);
         vprintf(format, args);
 
         // Clean up the argument list
@@ -473,6 +640,10 @@ const char *csvee_error_name(CsvError error)
 
         CASEFY_ERROR(INVALID_FILE);
         CASEFY_ERROR(NULL_FILE);
+
+        CASEFY_ERROR(NULL_FIELD);
+        CASEFY_ERROR(NULL_ROW);
+
         CASEFY_ERROR(FILE_ERROR);
 
         CASEFY_ERROR(VALUE_NULL);

@@ -10,10 +10,10 @@ CCFLAGS = -Wall -Wextra -std=c23 -Wformat -Wempty-body
 CCWARNS = -Wunused-function -Wempty-body -Wunused-variable
 
 # Comment/Uncomment to run examples/tests
-FOLDER = ./examples
+# FOLDER = ./examples
 
 # Comment/Uncomment to run examples/tests
-# FOLDER = ./tests
+FOLDER = ./tests
 
 all : build run clean
 
