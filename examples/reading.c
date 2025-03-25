@@ -5,7 +5,7 @@
 int main()
 {
     // Create a CSV file with 5 rows
-    Csvee file = csvee_create_csv();
+    Csvee_t file = csvee_create_csv();
 
     // // Create the first row with 3 fields
     // file.rows[0] = csvee_create_row(3);
@@ -39,7 +39,7 @@ int main()
     // CsvRow row = csvee_get_row(&file, 1);
     // csvee_print_row(&row);
 
-    Csvee file2 = csvee_read_from_file("csv/example.csv");
+    Csvee_t file2 = csvee_read_from_file("csv/example.csv");
     csvee_print_csv(&file2);
 
     // Free the CSV file
