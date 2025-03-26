@@ -11,6 +11,14 @@
 #include <string.h>
 #include <stdarg.h>
 
+#ifdef __cplusplus
+
+#include <fstream>
+#include <iostream>
+#include <exception>
+
+#endif //__cplusplus
+
 #define CSVEE_VERSION_MAJOR 0
 #define CSVEE_VERSION_MINOR 1
 #define CSVEE_VERSION_PATCH 0
@@ -45,7 +53,7 @@
 
 #pragma region STRUCTURES
 
-typedef enum CsvError
+typedef enum CsveeError_t
 {
     UNKNOWN = -1,
 
@@ -65,7 +73,7 @@ typedef enum CsvError
 
     VALUE_NULL,
     WRONG_CAST
-} CsvError;
+} CsveeError_t;
 
 // Define a structure for a CSV field
 typedef struct CsvField
@@ -126,8 +134,8 @@ void csvee_free_csv(Csvee_t *file);
 Csvee_t csvee_read_from_file(const char *filename);
 bool csvee_write_to_file(const Csvee_t *csvee, const char *filename);
 
-void csvee_error(CsvError error, const char *format, ...);
-const char *csvee_error_name(CsvError error);
+void csvee_error(CsveeError_t error, const char *format, ...);
+const char *csvee_error_name(CsveeError_t error);
 
 #pragma endregion // DECLARATIONS
 
@@ -607,7 +615,7 @@ bool csvee_write_to_file(const Csvee_t *csvee, const char *filename)
     return true;
 }
 
-void csvee_error(CsvError error, const char *format, ...)
+void csvee_error(CsveeError_t error, const char *format, ...)
 {
     if (format == NULL)
         fprintf(stderr, "CSVEE [%i] : %s \n", error, csvee_error_name(error));
@@ -625,7 +633,7 @@ void csvee_error(CsvError error, const char *format, ...)
     }
 };
 
-const char *csvee_error_name(CsvError error)
+const char *csvee_error_name(CsveeError_t error)
 {
     switch (error)
     {
@@ -656,18 +664,20 @@ const char *csvee_error_name(CsvError error)
 
 #pragma endregion // DEFINATIONS
 
-#pragma region // CPLUSPLUS
+#pragma region CPLUSPLUS
 
 #ifdef __cplusplus
 
-// Exeptions if C++
+class CsveeError : public exception
+{
+private:
+    CsveeError_t m_Error;
 
-// get_field_string()
-// get_row_string(seperator)
-// get_csvee_string(seperator)
+public:
+    const char *what() const {};
+};
 
-#include <fstream>
-#include <iostream>
+#pragma region DECLARATIONS
 class Csvee
 {
 private:
@@ -703,6 +713,18 @@ public:
         csvee_free_csv(&m_Csvee_t);
     };
 };
+
+#pragma endregion // DECLARATIONS
+
+#pragma region DEFINATIONS
+
+#pragma endregion // DEFINATIONS
+
+// Exeptions if C++
+
+// get_field_string()
+// get_row_string(seperator)
+// get_csvee_string(seperator)
 
 #endif // __cplusplus
 
