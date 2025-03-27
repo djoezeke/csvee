@@ -1,7 +1,3 @@
-// TODO: add bounch checking
-// TODO: add operator methods
-// TODO: typedef style for tsv method names
-
 #ifndef DJOEZEKE_CSVEE_H
 #define DJOEZEKE_CSVEE_H
 
@@ -28,10 +24,6 @@
 
 #ifdef CSVEE_DEBUG
 #endif // CSVEE_DEBUG
-
-#ifndef CSVEE_SEPERATOR
-#define CSVEE_SEPERATOR ','
-#endif // CSVEE_SEPERATOR
 
 #define MAX_LINE_LENGTH 1024
 #define MAX_FIELD_LENGTH 256
@@ -91,6 +83,7 @@ typedef struct Csvee_t
     CsvRow *rows;
     size_t count;
     size_t size;
+    char sep;
 } Csvee_t;
 
 #ifdef __cplusplus
@@ -186,7 +179,7 @@ CsvField csvee_get_filed(Csvee_t *csvee, size_t row, size_t col);
 CsvRow csvee_create_row(size_t field_count);
 CsvRow csvee_get_row(Csvee_t *csvee, size_t row);
 
-Csvee_t csvee_create_csv();
+Csvee_t csvee_create_csv(char sep);
 Csvee_t csvee_copy_csv(const Csvee_t *file);
 
 int csvee_update_field(Csvee_t *csvee, size_t row, size_t col, const char *value);
@@ -207,7 +200,7 @@ void csvee_error(CsveeError_t error, const char *format, ...);
 const char *csvee_error_name(CsveeError_t error);
 
 void csvee_field_str(const CsvField *field, char **buffer, size_t *size);
-void csvee_row_str(const CsvRow *row, char **buffer, size_t *size);
+void csvee_row_str(const CsvRow *row, char sep, char **buffer, size_t *size);
 void csvee_csv_str(const Csvee_t *csvee, char **buffer, size_t *size);
 
 void csvee_free_field(CsvField *field);
@@ -338,12 +331,13 @@ CsvRow csvee_get_row(Csvee_t *csvee, size_t row)
 };
 
 // Function to create a CSV file
-Csvee_t csvee_create_csv()
+Csvee_t csvee_create_csv(char sep)
 {
     Csvee_t file;
     file.count = 0;
     file.size = 5;
     file.rows = (CsvRow *)malloc(file.size * sizeof(CsvRow));
+    file.sep = sep;
     return file;
 }
 
@@ -694,14 +688,14 @@ void csvee_field_str(const CsvField *field, char **buffer, size_t *size)
     append_to_buffer(buffer, size, field->value);
 };
 
-void csvee_row_str(const CsvRow *row, char **buffer, size_t *size)
+void csvee_row_str(const CsvRow *row, char sep, char **buffer, size_t *size)
 {
     for (size_t i = 0; i < row->count; i++)
     {
         csvee_field_str(&row->fields[i], buffer, size);
         if (i < row->count - 1)
         {
-            append_to_buffer(buffer, size, "%c", CSVEE_SEPERATOR);
+            append_to_buffer(buffer, size, "%c", sep);
         }
     }
     append_to_buffer(buffer, size, "\n");
@@ -711,7 +705,7 @@ void csvee_csv_str(const Csvee_t *file, char **buffer, size_t *size)
 {
     for (size_t i = 0; i < file->count; i++)
     {
-        csvee_row_str(&file->rows[i], buffer, size);
+        csvee_row_str(&file->rows[i], &file->sep, buffer, size);
     }
 }
 
