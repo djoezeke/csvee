@@ -1,11 +1,12 @@
 #define CSVEE_SEPERATOR ','
 
+#define CSVEE_IMPLEMENTATION
 #include "../csvee.h"
 
 int main()
 {
     // Create a CSV file with 5 rows
-    Csvee_t file = csvee_create_csv();
+    Csvee_t file = csvee_create_csv(CSVEE_SEPERATOR);
 
     // // Create the first row with 3 fields
     // file.rows[0] = csvee_create_row(3);
@@ -40,7 +41,7 @@ int main()
     // csvee_print_row(&row);
 
     Csvee_t file2 = csvee_read_from_file("csv/example.csv");
-    csvee_print_csv(&file2);
+    // csvee_print_csv(&file2);
 
     // Free the CSV file
     csvee_free_csv(&file);

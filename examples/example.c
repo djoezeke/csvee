@@ -1,5 +1,6 @@
 #define CSVEE_SEPERATOR ','
 
+#define CSVEE_IMPLEMENTATION
 #include "../csvee.h"
 
 int main()
@@ -11,7 +12,7 @@ int main()
 
     // Free the CSV file
 
-    csvee_print_field(&field);
+    // csvee_print_field(&field);
     // csvee_free_csv(&file2);
 
     csvee_free_csv(&file);
