@@ -399,16 +399,15 @@ typedef enum CSVQuoteType
 
 typedef enum CSVValueType
 {
+	CSV_BOOL_VALUE,	  /**< Boolean value */
+	CSVEE_NULL_VALUE, /**< Empty string */
+	CSV_DOUBLE_VALUE, /**< Floating point value */
 	CSVEE_UNKNOW_VALUE,
-	CSVEE_NULL_VALUE,	 /**< Empty string */
-	CSV_BOOL_VALUE,		 /**< Boolean value */
-	CSV_DOUBLE_VALUE,	 /**< Floating point value */
 	CSVEE_STRING_VALUE,	 /**< Non-numeric string */
 	CSVEE_INTEGER_VALUE, /**< Integer value */
 
 } CSVValueType;
 
-// Define a structure for a CSV field
 typedef struct CSVDialect_t
 {
 	CSVQuoteType quoting;
@@ -418,14 +417,13 @@ typedef struct CSVDialect_t
 	char delimiter;
 	char quotechar;
 
-	char *lineterminator;
-
 	bool doublequote;
 	bool skipwhitespace;
 
+	char *lineterminator;
+
 } CSVDialect_t;
 
-// Define a structure for a CSV field
 typedef struct CSVField_t
 {
 	struct CSVField_t *prev;
@@ -444,7 +442,18 @@ typedef struct CSVField_t
 
 } CSVField_t;
 
-// Define a structure for a CSV row
+typedef struct CSVStat_t
+{
+} CSVStat_t;
+
+typedef struct CSVInfo_t
+{
+	size_t rows;
+	char *filename;
+	size_t columns;
+
+} CSVInfo_t;
+
 typedef struct CSVRow_t
 {
 	struct CSVRow_t *prev;
@@ -455,6 +464,15 @@ typedef struct CSVRow_t
 
 } CSVRow_t;
 
+typedef struct Csvee_t
+{
+	CSVDialect_t Dialect;
+	CSVRow_t *rows;
+	size_t count;
+	size_t size;
+
+} Csvee_t;
+
 typedef struct CsvIterator_t
 {
 	const CSVRow_t *ptr;
@@ -464,16 +482,6 @@ typedef struct RowIterator_t
 {
 	const CSVField_t *ptr;
 } RowIterator_t;
-
-// Define a structure for a CSV file
-typedef struct Csvee_t
-{
-	CSVDialect_t Dialect;
-	CSVRow_t *rows;
-	size_t count;
-	size_t size;
-
-} Csvee_t;
 
 /** @} */
 
@@ -486,23 +494,22 @@ extern "C"
 {
 #endif //__cplusplus
 
-	RowIterator_t csv_row_iter_begin(const CSVRow_t *row);
-	RowIterator_t csv_row_iter_end(const CSVRow_t *row);
+	CSVRow_t *csv_next_row(const Csvee_t *csvee);
+	CSVField_t *csv_next_field(const CSVRow_t *row);
+
+	RowIterator_t *csv_row_iter_begin(const CSVRow_t *row);
+	RowIterator_t *csv_row_iter_end(const CSVRow_t *row);
 
 	void csv_row_iter_next(RowIterator_t *row_iter);
-	char *csv_row_iter_peek(RowIterator_t *row_iter);
+	const CSVField_t *csv_row_iter_peek(RowIterator_t *row_iter);
 	bool csv_row_iter_equal(RowIterator_t *begin_iter, RowIterator_t *end_iter);
 
-	CsvIterator_t csv_csv_iter_begin(const Csvee_t *csvee);
-	CsvIterator_t csv_csv_iter_end(const Csvee_t *csvee);
+	CsvIterator_t *csv_csv_iter_begin(const Csvee_t *csvee);
+	CsvIterator_t *csv_csv_iter_end(const Csvee_t *csvee);
 
 	void csv_csv_iter_next(CsvIterator_t *csv_iter);
 	const CSVRow_t *csv_csv_iter_peek(CsvIterator_t *csv_iter);
 	bool csv_csv_iter_equal(CsvIterator_t *begin_iter, CsvIterator_t *end_iter);
-
-	void csv_row_iter_next(RowIterator_t *row_iter);
-	char *csv_row_iter_peek(RowIterator_t *row_iter);
-	bool csv_row_iter_equal(RowIterator_t *begin_iter, RowIterator_t *end_iter);
 
 	double csv_field_to_double(CSVField_t *field);
 	int csv_field_to_integer(CSVField_t *field);
@@ -956,7 +963,7 @@ extern "C"
 {
 #endif // __cplusplus
 
-	RowIterator_t csv_row_iter_begin(const CSVRow_t *row)
+	RowIterator_t *csv_row_iter_begin(const CSVRow_t *row)
 	{
 		RowIterator_t iter;
 		if (row == NULL || row->count == 0)
@@ -967,15 +974,15 @@ extern "C"
 		{
 			iter.ptr = &row->fields[0];
 		}
-		return iter;
+		return &iter;
 	};
 
-	RowIterator_t csv_row_iter_end(const CSVRow_t *row)
+	RowIterator_t *csv_row_iter_end(const CSVRow_t *row)
 	{
 		(void)row;
 		RowIterator_t iter;
 		iter.ptr = NULL;
-		return iter;
+		return &iter;
 	};
 
 	void csv_row_iter_next(RowIterator_t *row_iter)
@@ -993,7 +1000,7 @@ extern "C"
 		return (begin_iter->ptr == end_iter->ptr);
 	};
 
-	CsvIterator_t csv_csv_iter_begin(const Csvee_t *csvee)
+	CsvIterator_t *csv_csv_iter_begin(const Csvee_t *csvee)
 	{
 		CsvIterator_t iter;
 		if (csvee == NULL || csvee->count == 0)
@@ -1004,15 +1011,15 @@ extern "C"
 		{
 			iter.ptr = &csvee->rows[0];
 		}
-		return iter;
+		return &iter;
 	};
 
-	CsvIterator_t csv_csv_iter_end(const Csvee_t *csvee)
+	CsvIterator_t *csv_csv_iter_end(const Csvee_t *csvee)
 	{
 		(void)csvee;
 		CsvIterator_t iter;
 		iter.ptr = NULL;
-		return iter;
+		return &iter;
 	};
 
 	void csv_csv_iter_next(CsvIterator_t *csv_iter)
