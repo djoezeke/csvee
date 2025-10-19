@@ -80,8 +80,8 @@
  * @param value The error value to convert to a string.
  */
 #define CASEFY_ERROR(value) \
-  case value:               \
-    return #value;
+	case value:             \
+		return #value;
 
 //-----------------------------------------------------------------------------
 // [SECTION] Platform
@@ -126,7 +126,7 @@
  */
 #define CSVEE_PLATFORM_NAME_IS "Linux"
 #elif defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || \
-    defined(_MSC_VER) || defined(__MINGW32__)
+	defined(_MSC_VER) || defined(__MINGW32__)
 /**
  * A preprocessor macro that is only defined if compiling for Windows.
  */
@@ -266,10 +266,10 @@
 #define CSVEE_PRAGMA_TO_STR(x) _Pragma(#x)
 #define CSVEE_CLANG_SUPPRESS_WARNING_PUSH _Pragma("clang diagnostic push")
 #define CSVEE_CLANG_SUPPRESS_WARNING(w) \
-  CSVEE_PRAGMA_TO_STR(clang diagnostic ignored w)
+	CSVEE_PRAGMA_TO_STR(clang diagnostic ignored w)
 #define CSVEE_CLANG_SUPPRESS_WARNING_POP _Pragma("clang diagnostic pop")
 #define CSVEE_CLANG_SUPPRESS_WARNING_WITH_PUSH(w) \
-  CSVEE_CLANG_SUPPRESS_WARNING_PUSH CSVEE_CLANG_SUPPRESS_WARNING(w)
+	CSVEE_CLANG_SUPPRESS_WARNING_PUSH CSVEE_CLANG_SUPPRESS_WARNING(w)
 #else // CSVEE_CLANG
 #define CSVEE_CLANG_SUPPRESS_WARNING_PUSH
 #define CSVEE_CLANG_SUPPRESS_WARNING(w)
@@ -281,10 +281,10 @@
 #define CSVEE_PRAGMA_TO_STR(x) _Pragma(#x)
 #define CSVEE_GCC_SUPPRESS_WARNING_PUSH _Pragma("GCC diagnostic push")
 #define CSVEE_GCC_SUPPRESS_WARNING(w) \
-  CSVEE_PRAGMA_TO_STR(GCC diagnostic ignored w)
+	CSVEE_PRAGMA_TO_STR(GCC diagnostic ignored w)
 #define CSVEE_GCC_SUPPRESS_WARNING_POP _Pragma("GCC diagnostic pop")
 #define CSVEE_GCC_SUPPRESS_WARNING_WITH_PUSH(w) \
-  CSVEE_GCC_SUPPRESS_WARNING_PUSH CSVEE_GCC_SUPPRESS_WARNING(w)
+	CSVEE_GCC_SUPPRESS_WARNING_PUSH CSVEE_GCC_SUPPRESS_WARNING(w)
 #else // CSVEE_GCC
 #define CSVEE_GCC_SUPPRESS_WARNING_PUSH
 #define CSVEE_GCC_SUPPRESS_WARNING(w)
@@ -297,7 +297,7 @@
 #define CSVEE_MSVC_SUPPRESS_WARNING(w) __pragma(warning(disable : w))
 #define CSVEE_MSVC_SUPPRESS_WARNING_POP __pragma(warning(pop))
 #define CSVEE_MSVC_SUPPRESS_WARNING_WITH_PUSH(w) \
-  CSVEE_MSVC_SUPPRESS_WARNING_PUSH CSVEE_MSVC_SUPPRESS_WARNING(w)
+	CSVEE_MSVC_SUPPRESS_WARNING_PUSH CSVEE_MSVC_SUPPRESS_WARNING(w)
 #else // CSVEE_MSVC
 #define CSVEE_MSVC_SUPPRESS_WARNING_PUSH
 #define CSVEE_MSVC_SUPPRESS_WARNING(w)
@@ -361,79 +361,92 @@
 
 typedef enum CsvError_t
 {
-  UNKNOWN = -1,
+	UNKNOWN = -1,
+	NO_SEPARATOR,
+	MISSING_VALUE,
+	INVALID_FIELD, // if filed doesnt exits
+	EMPTY_FIELD,
+	NULL_FIELD,
+	INVALID_ROW,
+	NULL_ROW,
+	INVALID_FILE, // if
+	NULL_FILE,	  // if pointer is null
+	FILE_ERROR,
+	IO_ERROR,
+	VALUE_NULL,
+	WRONG_CAST,
+	VALUE_NULL,
+	WRONG_CAST,
+	PARSE_ERROR,
+	OUT_OF_MEMORY,
 
-  NO_SEPARATOR,
-  MISSING_VALUE,
-
-  INVALID_FIELD, // if filed doesnt exits
-  EMPTY_FIELD,
-  NULL_FIELD,
-
-  INVALID_ROW,
-  NULL_ROW,
-
-  INVALID_FILE, // if
-  NULL_FILE,    // if pointer is null
-  FILE_ERROR,
-
-  VALUE_NULL,
-  WRONG_CAST
 } CsvError_t;
 
 typedef enum CSVQuoteType
 {
-  CSVEE_QUOTE_ALL,
-  CSVEE_QUOTE_NONE,
-  CSVEE_QUOTE_STRING,
-  CSVEE_QUOTE_NOTNULL,
-  CSVEE_QUOTE_MINIMAL,
-  CSVEE_QUOTE_NONNUMERIC,
+	CSVEE_QUOTE_ALL,
+	CSVEE_QUOTE_NONE,
+	CSVEE_QUOTE_STRING,
+	CSVEE_QUOTE_NOTNULL,
+	CSVEE_QUOTE_MINIMAL,
+	CSVEE_QUOTE_NONNUMERIC,
 
 } CSVQuoteType;
 
 // Define a structure for a CSV field
 typedef struct CSVDialect_t
 {
-  CSVQuoteType quoting;
+	CSVQuoteType quoting;
 
-  char *name;
+	char *name;
 
-  char delimiter;
-  char quotechar;
+	char delimiter;
+	char quotechar;
 
-  char *lineterminator;
+	char *lineterminator;
 
-  bool doublequote;
-  bool skipwhitespace;
+	bool doublequote;
+	bool skipwhitespace;
 
 } CSVDialect_t;
 
 // Define a structure for a CSV field
-typedef struct Cell_t
+typedef struct Field_t
 {
-  char *value;
-} Cell_t;
+	struct Field_t *prev;
+	struct Field_t *next;
+	char *value;
+
+} Field_t;
 
 // Define a structure for a CSV row
 typedef struct Row_t
 {
-  Cell_t *fields;
-  size_t count;
+	struct Row_t *prev;
+	struct Row_t *next;
+	Field_t *fields;
+	size_t count;
+
 } Row_t;
+
+typedef struct CsvIterator_t
+{
+	const Row_t *ptr;
+} CsvIterator_t;
 
 typedef struct RowIterator_t
 {
-  const Cell_t *ptr;
+	const Field_t *ptr;
 } RowIterator_t;
 
 // Define a structure for a CSV file
 typedef struct Csvee_t
 {
-  Row_t *rows;
-  size_t count;
-  size_t size;
-  char sep;
+	CSVDialect_t dialect;
+	Row_t *rows;
+	size_t count;
+	size_t size;
+	char sep;
 } Csvee_t;
 
 /** @} */
@@ -447,51 +460,63 @@ extern "C"
 {
 #endif //__cplusplus
 
-  RowIterator_t csv_row_iter_begin(const Row_t *row);
-  RowIterator_t csv_row_iter_end(const Row_t *row);
-  void csv_row_iter_next(RowIterator_t *row_iter);
-  char *csv_row_iter_peek(RowIterator_t *row_iter);
-  bool csv_row_iter_equal(RowIterator_t *begin_iter, RowIterator_t *end_iter);
+	RowIterator_t csv_row_iter_begin(const Row_t *row);
+	RowIterator_t csv_row_iter_end(const Row_t *row);
 
-  double csv_field_to_double(Cell_t *field);
-  int csv_field_to_integer(Cell_t *field);
-  char *csv_field_to_string(Cell_t *field);
-  int csv_field_to_boolean(Cell_t *field);
+	void csv_row_iter_next(RowIterator_t *row_iter);
+	char *csv_row_iter_peek(RowIterator_t *row_iter);
+	bool csv_row_iter_equal(RowIterator_t *begin_iter, RowIterator_t *end_iter);
 
-  Cell_t csvee_create_field(const char *value);
-  Cell_t csvee_get_filed(Csvee_t *csvee, size_t row, size_t col);
+	CsvIterator_t csv_csv_iter_begin(const Csvee_t *csvee);
+	CsvIterator_t csv_csv_iter_end(const Csvee_t *csvee);
 
-  Row_t csvee_create_row(size_t field_count);
-  Row_t csvee_get_row(Csvee_t *csvee, size_t row);
+	void csv_csv_iter_next(CsvIterator_t *csv_iter);
+	const Row_t *csv_csv_iter_peek(CsvIterator_t *csv_iter);
+	bool csv_csv_iter_equal(CsvIterator_t *begin_iter, CsvIterator_t *end_iter);
 
-  Csvee_t csvee_create_csv(char sep);
-  Csvee_t csvee_copy_csv(const Csvee_t *file);
+	void csv_row_iter_next(RowIterator_t *row_iter);
+	char *csv_row_iter_peek(RowIterator_t *row_iter);
+	bool csv_row_iter_equal(RowIterator_t *begin_iter, RowIterator_t *end_iter);
 
-  int csvee_update_field(Csvee_t *csvee, size_t row, size_t col,
-                         const char *value);
-  int csvee_delete_field(Csvee_t *csvee, size_t row, size_t col);
-  int csvee_field_exist(Csvee_t *csvee, size_t row, size_t col);
-  int csvee_field_equal(Cell_t *field, Cell_t *other);
+	double csv_field_to_double(Field_t *field);
+	int csv_field_to_integer(Field_t *field);
+	char *csv_field_to_string(Field_t *field);
+	int csv_field_to_boolean(Field_t *field);
 
-  int csvee_add_row(Csvee_t *csvee, size_t fields_count, ...);
-  int csvee_update_row(Csvee_t *csvee, size_t row, size_t fields_count, ...);
-  int csvee_delete_row(Csvee_t *csvee, size_t row);
-  int csvee_row_exist(Csvee_t *csvee, size_t row);
-  int csvee_row_equal(Row_t *row, Row_t *other);
+	Field_t csvee_create_field(const char *value);
+	Field_t csvee_get_filed(Csvee_t *csvee, size_t row, size_t col);
 
-  Csvee_t csvee_read_from_file(const char *filename);
-  bool csvee_write_to_file(const Csvee_t *csvee, const char *filename);
+	Row_t csvee_create_row(size_t field_count);
+	Row_t csvee_get_row(Csvee_t *csvee, size_t row);
 
-  void csvee_error(CsvError_t error, const char *format, ...);
-  const char *csvee_error_name(CsvError_t error);
+	Csvee_t csvee_create_csv(char sep);
+	Csvee_t csvee_copy_csv(const Csvee_t *file);
 
-  void csvee_field_str(const Cell_t *field, char **buffer, size_t *size);
-  void csvee_row_str(const Row_t *row, char sep, char **buffer, size_t *size);
-  void csvee_csv_str(const Csvee_t *csvee, char **buffer, size_t *size);
+	int csvee_update_field(Csvee_t *csvee, size_t row, size_t col,
+						   const char *value);
+	int csvee_delete_field(Csvee_t *csvee, size_t row, size_t col);
+	int csvee_field_exist(Csvee_t *csvee, size_t row, size_t col);
+	int csvee_field_equal(Field_t *field, Field_t *other);
 
-  void csvee_free_row(Row_t *row);
-  void csvee_free_csv(Csvee_t *csvee);
-  void csvee_free_field(Cell_t *field);
+	int csvee_add_row(Csvee_t *csvee, size_t fields_count, ...);
+	int csvee_update_row(Csvee_t *csvee, size_t row, size_t fields_count, ...);
+	int csvee_delete_row(Csvee_t *csvee, size_t row);
+	int csvee_row_exist(Csvee_t *csvee, size_t row);
+	int csvee_row_equal(Row_t *row, Row_t *other);
+
+	Csvee_t csvee_read_from_file(const char *filename);
+	bool csvee_write_to_file(const Csvee_t *csvee, const char *filename);
+
+	void csvee_error(CsvError_t error, const char *format, ...);
+	const char *csvee_error_name(CsvError_t error);
+
+	void csvee_field_str(const Field_t *field, char **buffer, size_t *size);
+	void csvee_row_str(const Row_t *row, char sep, char **buffer, size_t *size);
+	void csvee_csv_str(const Csvee_t *csvee, char **buffer, size_t *size);
+
+	void csvee_free_row(Row_t *row);
+	void csvee_free_csv(Csvee_t *csvee);
+	void csvee_free_field(Field_t *field);
 
 #ifdef __cplusplus
 }
@@ -506,94 +531,118 @@ extern "C"
 namespace csvee
 {
 
-  template <class CSVDialect>
-  class Csvee
-  {
-  public:
-    Csvee(CSVDialect dialect);
+	template <class CSVDialect>
+	class Csvee
+	{
+	public:
+		Csvee();
 
-  private:
-    CSVDialect m_Dialect;
-  };
+		dialect Dialect();
 
-  class CSVDialect
-  {
-  public:
-    CSVDialect(char *name, char delimiter, char quotechar, char *lineterminator, bool doublequote, bool skipwhitespace, CSVQuoteType quoting);
-    CSVDialect(std::string name, char delimiter, char quotechar, std::string lineterminator, bool doublequote, bool skipwhitespace, CSVQuoteType quoting);
+		Csvee *WriteHead();
+		Csvee *WriteRow();
+		Csvee *WriteRows();
 
-  private:
-    CSVDialect_t m_Dialect;
-  };
+		// CSV-level iterators for range-based for
+		CsvIterator_t begin() const { return csv_csv_iter_begin(&m_file); }
+		CsvIterator_t end() const { return csv_csv_iter_end(&m_file); }
 
-  class Excel : public CSVDialect
-  {
-  public:
-    Excel()
-        : CSVDialect("excel", ',', '"', "\r\n", true, false, CSVEE_QUOTE_MINIMAL) {};
-  };
+		// Row-level helpers
+		static RowIterator_t row_begin(const Row_t *row) { return csv_row_iter_begin(row); }
+		static RowIterator_t row_end(const Row_t *row) { return csv_row_iter_end(row); }
 
-  class ExcelTab : public CSVDialect
-  {
-  public:
-    ExcelTab()
-        : CSVDialect("excel-tab", '\t', '"', "\r\n", true, false, CSVEE_QUOTE_MINIMAL) {};
-  };
+	private:
+		using dialect = CSVDialect;
 
-  class Unix : public CSVDialect
-  {
-  public:
-    Unix()
-        : CSVDialect("unix", ',', '"', "\n", true, false, CSVEE_QUOTE_ALL) {};
-  };
+	private:
+		dialect m_Dialect;
+		Csvee_t m_Csvee;
+	};
 
-  /**
-   * @brief CsveeError class for Csvee-related errors.
-   */
-  class CsveeError : public std::exception
-  {
-  public:
-    /**
-     * @brief Default constructor.
-     */
-    CsveeError();
+	class CSVDialect
+	{
+	public:
+		CSVDialect(char *name, char delimiter, char quotechar, char *lineterminator, bool doublequote, bool skipwhitespace, CSVQuoteType quoting);
+		CSVDialect(std::string name, char delimiter, char quotechar, std::string lineterminator, bool doublequote, bool skipwhitespace, CSVQuoteType quoting);
 
-    /**
-     * @brief Constructs an exception with a specific error type.
-     * @param type The type of the error.
-     */
-    CsveeError(CsvError_t type);
+	private:
+		CSVDialect_t m_Dialect;
+	};
 
-    /**
-     * @brief Constructs an exception with a specific message and error type.
-     * @param message The error message.
-     * @param type The type of the error.
-     */
-    CsveeError(const std::string &message, CsvError_t type);
+	class Excel : public CSVDialect
+	{
+	public:
+		Excel()
+			: CSVDialect("excel", ',', '"', "\r\n", true, false, CSVEE_QUOTE_MINIMAL) {};
+	};
 
-    /**
-     * @brief Gets the error message.
-     * @return The error message.
-     */
-    const char *what() const noexcept override;
+	class ExcelTab : public CSVDialect
+	{
+	public:
+		ExcelTab()
+			: CSVDialect("excel-tab", '\t', '"', "\r\n", true, false, CSVEE_QUOTE_MINIMAL) {};
+	};
 
-    /**
-     * @brief Gets the error type.
-     * @return The error type.
-     */
-    CsvError_t GetErrType() const noexcept;
+	class Unix : public CSVDialect
+	{
+	public:
+		Unix()
+			: CSVDialect("unix", ',', '"', "\n", true, false, CSVEE_QUOTE_ALL) {};
+	};
 
-    /**
-     * @brief Gets the name of the error type.
-     * @param error The error type.
-     * @return The name of the error type.
-     */
-    std::string GetErrName(CsvError_t error) const noexcept;
+	/**
+	 * @brief CsveeError class for Csvee-related errors.
+	 */
+	class CsveeError : public std::exception
+	{
+	public:
+		/**
+		 * @brief Default constructor.
+		 */
+		CsveeError();
 
-  private:
-    mutable std::string m_Msg; //!< The error message.
-    CsvError_t m_ErrType;      //!< The error type.
-  };
+		/**
+		 * @brief Constructs an exception with a specific error type.
+		 * @param type The type of the error.
+		 */
+		CsveeError(CsvError_t type);
+
+		/**
+		 * @brief Constructs an exception with a specific message and error type.
+		 * @param message The error message.
+		 * @param type The type of the error.
+		 */
+		CsveeError(const std::string &message, CsvError_t type);
+
+		/**
+		 * @brief Gets the error message.
+		 * @return The error message.
+		 */
+		const char *what() const noexcept override;
+
+		/**
+		 * @brief Gets the error type.
+		 * @return The error type.
+		 */
+		CsvError_t GetErrType() const noexcept;
+
+		/**
+		 * @brief Gets the name of the error type.
+		 * @param error The error type.
+		 * @return The name of the error type.
+		 */
+		std::string GetErrName(CsvError_t error) const noexcept;
+
+	private:
+		mutable std::string m_Msg; //!< The error message.
+		CsvError_t m_ErrType;	   //!< The error type.
+	};
+
+	template <class CSVDialect, class OutputType>
+	void writer(Csvee<CSVDialect> &csvee, OutputType csv_output);
+
+	template <class CSVDialect, class InputType>
+	Csvee<CSVDialect> reader(InputType csv_input);
 
 }; // namespace csvee
 
@@ -622,13 +671,13 @@ extern "C"
 {
 #endif // __cplusplus
 
-  //-----------------------------------------------------------------------------
-  // [SECTION] Declarations
-  //-----------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------
+	// [SECTION] Declarations
+	//-----------------------------------------------------------------------------
 
-  //-----------------------------------------------------------------------------
-  // [SECTION] Definations
-  //-----------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------
+	// [SECTION] Definations
+	//-----------------------------------------------------------------------------
 
 #ifdef __cplusplus
 };
@@ -643,37 +692,6 @@ extern "C"
 //-----------------------------------------------------------------------------
 // [SECTION] Declarations
 //-----------------------------------------------------------------------------
-
-class CSVEE_API IReader{};
-
-class CSVEE_API IWriter{};
-
-class CSVEE_API Csvee
-{
-private:
-  Csvee_t m_Csvee_t;
-
-protected:
-  char m_Seperator;
-
-public:
-  Csvee(char seperator);
-  Csvee();
-
-  Row_t GetRow(int row);
-  Cell_t GetField(int col);
-  Csvee_t GetFile();
-
-  void AddRow(int row);
-  int RowExits(int row);
-  void ReadFile(std::fstream file) {};
-  void WriteFile(std::string file_path) {};
-
-  std::string Stringify();
-
-  ~Csvee();
-  ~Csvee();
-};
 
 //-----------------------------------------------------------------------------
 // [SECTION] Definations
@@ -694,565 +712,616 @@ extern "C"
 {
 #endif // __cplusplus
 
-  RowIterator_t csv_row_iter_begin(const Row_t *row)
-  {
-    RowIterator_t iter;
-    iter.ptr = &row->fields[0];
-    return iter;
-  };
+	RowIterator_t csv_row_iter_begin(const Row_t *row)
+	{
+		RowIterator_t iter;
+		if (row == NULL || row->count == 0)
+		{
+			iter.ptr = NULL;
+		}
+		else
+		{
+			iter.ptr = &row->fields[0];
+		}
+		return iter;
+	};
 
-  RowIterator_t csv_row_iter_end(const Row_t *row)
-  {
-    RowIterator_t iter;
-    iter.ptr = NULL;
-    return iter;
-  };
+	RowIterator_t csv_row_iter_end(const Row_t *row)
+	{
+		(void)row;
+		RowIterator_t iter;
+		iter.ptr = NULL;
+		return iter;
+	};
 
-  void csv_row_iter_next(RowIterator_t *row_iter)
-  {
-    if (row_iter == NULL)
-    {
-      return;
-    }
-    row_iter->ptr++;
-  };
+	void csv_row_iter_next(RowIterator_t *row_iter)
+	{
+		if (row_iter == NULL)
+		{
+			return;
+		}
+		if (row_iter->ptr != NULL)
+			row_iter->ptr++;
+	};
 
-  char *csv_row_iter_peek(RowIterator_t *row_iter)
-  {
-    return row_iter->ptr->value;
-  };
+	char *csv_row_iter_peek(RowIterator_t *row_iter)
+	{
+		if (row_iter == NULL || row_iter->ptr == NULL)
+			return NULL;
+		return row_iter->ptr->value;
+	};
 
-  bool csv_row_iter_equal(RowIterator_t *begin_iter, RowIterator_t *end_iter)
-  {
-    //   assert(NULL != begin_iter);
-    //   assert(NULL != end_iter);
-    return (begin_iter->ptr == end_iter->ptr);
-  };
+	bool csv_row_iter_equal(RowIterator_t *begin_iter, RowIterator_t *end_iter)
+	{
+		return (begin_iter->ptr == end_iter->ptr);
+	};
 
-  double csv_field_to_double(Cell_t *field)
-  {
-    if (field == NULL)
-    {
+	CsvIterator_t csv_csv_iter_begin(const Csvee_t *csvee)
+	{
+		CsvIterator_t iter;
+		if (csvee == NULL || csvee->count == 0)
+		{
+			iter.ptr = NULL;
+		}
+		else
+		{
+			iter.ptr = &csvee->rows[0];
+		}
+		return iter;
+	};
+
+	CsvIterator_t csv_csv_iter_end(const Csvee_t *csvee)
+	{
+		(void)csvee;
+		CsvIterator_t iter;
+		iter.ptr = NULL;
+		return iter;
+	};
+
+	void csv_csv_iter_next(CsvIterator_t *csv_iter)
+	{
+		if (csv_iter == NULL)
+			return;
+		if (csv_iter->ptr != NULL)
+			csv_iter->ptr++;
+	};
+
+	const Row_t *csv_csv_iter_peek(CsvIterator_t *csv_iter)
+	{
+		if (csv_iter == NULL || csv_iter->ptr == NULL)
+			return NULL;
+		return csv_iter->ptr;
+	};
+
+	bool csv_csv_iter_equal(CsvIterator_t *begin_iter, CsvIterator_t *end_iter)
+	{
+		return (begin_iter->ptr == end_iter->ptr);
+	};
+
+	double csv_field_to_double(Field_t *field)
+	{
+		if (field == NULL)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(NULL_FIELD, "Field is NULL\n");
+			csvee_error(NULL_FIELD, "Field is NULL\n");
 #endif // CSVEE_DEBUG
-      return -1.0;
-    }
+			return -1.0;
+		}
 
-    return atof(field->value);
-  };
+		return atof(field->value);
+	};
 
-  int csv_field_to_integer(Cell_t *field)
-  {
-    if (field == NULL)
-    {
+	int csv_field_to_integer(Field_t *field)
+	{
+		if (field == NULL)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(NULL_FIELD, "Field is NULL\n");
+			csvee_error(NULL_FIELD, "Field is NULL\n");
 #endif // CSVEE_DEBUG
-      return -1;
-    }
+			return -1;
+		}
 
-    return atoi(field->value);
-  };
+		return atoi(field->value);
+	};
 
-  char *csv_field_to_string(Cell_t *field)
-  {
-    if (field == NULL)
-    {
+	char *csv_field_to_string(Field_t *field)
+	{
+		if (field == NULL)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(NULL_FIELD, "Field is NULL\n");
+			csvee_error(NULL_FIELD, "Field is NULL\n");
 #endif // CSVEE_DEBUG
-      return NULL;
-    }
+			return NULL;
+		}
 
-    return field->value;
-  };
+		return field->value;
+	};
 
-  int csv_field_to_boolean(Cell_t *field)
-  {
-    int ret;
+	int csv_field_to_boolean(Field_t *field)
+	{
+		int ret;
 
-    if (field == NULL)
-    {
+		if (field == NULL)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(NULL_FIELD, "Field is NULL\n");
+			csvee_error(NULL_FIELD, "Field is NULL\n");
 #endif // CSVEE_DEBUG
-      return -1;
-    }
-    if (strcmp(field->value, "0") == 0)
-    {
-      ret = 0;
-    }
+			return -1;
+		}
+		if (strcmp(field->value, "0") == 0)
+		{
+			ret = 0;
+		}
 
-    if (strcmp(field->value, "1") == 0)
-    {
-      ret = 1;
-    }
+		if (strcmp(field->value, "1") == 0)
+		{
+			ret = 1;
+		}
 
-    return ret;
-  };
-  // Function to create a CSV field
-  Cell_t csvee_create_field(const char *value)
-  {
-    Cell_t field;
-    field.value = strdup(value);
-    return field;
-  }
+		return ret;
+	};
+	// Function to create a CSV field
+	Field_t csvee_create_field(const char *value)
+	{
+		Field_t field;
+		field.value = strdup(value);
+		return field;
+	}
 
-  Cell_t csvee_get_filed(Csvee_t *csvee, size_t row, size_t col)
-  {
-    Cell_t field = csvee_create_field("");
+	Field_t csvee_get_filed(Csvee_t *csvee, size_t row, size_t col)
+	{
+		Field_t field = csvee_create_field("");
 
-    if (csvee->count < row)
-    {
+		if (csvee->count < row)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
+			csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
 #endif // CSVEE_DEBUG
-      return field;
-    }
+			return field;
+		}
 
-    if (csvee->rows[row - 1].count < col)
-    {
+		if (csvee->rows[row - 1].count < col)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(INVALID_FIELD, "Field (%d) : is out of range\n", col);
+			csvee_error(INVALID_FIELD, "Field (%d) : is out of range\n", col);
 #endif // CSVEE_DEBUG
-      return field;
-    }
+			return field;
+		}
 
-    field.value = strdup(csvee->rows[row - 1].fields[col - 1].value);
-    return field;
-  };
+		field.value = strdup(csvee->rows[row - 1].fields[col - 1].value);
+		return field;
+	};
 
-  // Function to create a CSV row
-  Row_t csvee_create_row(size_t field_count)
-  {
-    Row_t row;
-    row.fields = (Cell_t *)malloc(field_count * sizeof(Cell_t));
-    row.count = field_count;
-    return row;
-  }
+	// Function to create a CSV row
+	Row_t csvee_create_row(size_t field_count)
+	{
+		Row_t row;
+		row.fields = (Field_t *)malloc(field_count * sizeof(Field_t));
+		row.count = field_count;
+		return row;
+	}
 
-  Row_t csvee_get_row(Csvee_t *csvee, size_t row)
-  {
-    Row_t nrow = csvee_create_row(0);
+	Row_t csvee_get_row(Csvee_t *csvee, size_t row)
+	{
+		Row_t nrow = csvee_create_row(0);
 
-    if (csvee->count < row)
-    {
+		if (csvee->count < row)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
+			csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
 #endif // CSVEE_DEBUG
-      return nrow;
-    }
+			return nrow;
+		}
 
-    nrow = csvee->rows[row - 1];
-    return nrow;
-  };
+		nrow = csvee->rows[row - 1];
+		return nrow;
+	};
 
-  // Function to create a CSV file
-  Csvee_t csvee_create_csv(char sep)
-  {
-    Csvee_t file;
-    file.count = 0;
-    file.size = 5;
-    file.rows = (Row_t *)malloc(file.size * sizeof(Row_t));
-    file.sep = sep;
-    return file;
-  }
+	// Function to create a CSV file
+	Csvee_t csvee_create_csv(char sep)
+	{
+		Csvee_t file;
+		file.count = 0;
+		file.size = 5;
+		file.rows = (Row_t *)malloc(file.size * sizeof(Row_t));
+		file.sep = sep;
+		return file;
+	}
 
-  Csvee_t csvee_copy_csv(const Csvee_t *file)
-  {
-    Csvee_t copy = *file;
-    copy.count = file->count;
-    copy.rows = file->rows;
-    copy.size = file->size;
-    return copy;
-  };
+	Csvee_t csvee_copy_csv(const Csvee_t *file)
+	{
+		Csvee_t copy = *file;
+		copy.count = file->count;
+		copy.rows = file->rows;
+		copy.size = file->size;
+		return copy;
+	};
 
-  int csvee_update_field(Csvee_t *csvee, size_t row, size_t col,
-                         const char *value)
-  {
-    if (csvee->count < row)
-    {
+	int csvee_update_field(Csvee_t *csvee, size_t row, size_t col,
+						   const char *value)
+	{
+		if (csvee->count < row)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
+			csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
 #endif // CSVEE_DEBUG
-      return 0;
-    }
+			return 0;
+		}
 
-    if (csvee->rows[row - 1].count < col)
-    {
+		if (csvee->rows[row - 1].count < col)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(INVALID_FIELD, "Field (%d) : is out of range\n", col);
+			csvee_error(INVALID_FIELD, "Field (%d) : is out of range\n", col);
 #endif // CSVEE_DEBUG
-      return 0;
-    }
+			return 0;
+		}
 
-    csvee->rows[row - 1].fields[col - 1].value = strdup(value);
-    return 1;
-  };
+		csvee->rows[row - 1].fields[col - 1].value = strdup(value);
+		return 1;
+	};
 
-  int csvee_delete_field(Csvee_t *csvee, size_t row, size_t col)
-  {
-    if (csvee == NULL)
-    {
+	int csvee_delete_field(Csvee_t *csvee, size_t row, size_t col)
+	{
+		if (csvee == NULL)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(NULL_FILE, "File is null\n");
+			csvee_error(NULL_FILE, "File is null\n");
 #endif // CSVEE_DEBUG
-      return 0;
-    }
+			return 0;
+		}
 
-    if (csvee->count < row)
-    {
+		if (csvee->count < row)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
+			csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
 #endif // CSVEE_DEBUG
-      return 0;
-    }
+			return 0;
+		}
 
-    if (csvee->rows[row - 1].count < col)
-    {
+		if (csvee->rows[row - 1].count < col)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(INVALID_FIELD, "Field (%d) : is out of range\n", col);
+			csvee_error(INVALID_FIELD, "Field (%d) : is out of range\n", col);
 #endif // CSVEE_DEBUG
-      return 0;
-    }
+			return 0;
+		}
 
-    csvee->rows[row - 1].fields[col - 1].value = "";
-    csvee->rows[row - 1].count--;
+		csvee->rows[row - 1].fields[col - 1].value = "";
+		csvee->rows[row - 1].count--;
 
-    return 1;
-  };
+		return 1;
+	};
 
-  int csvee_field_exist(Csvee_t *csvee, size_t row, size_t col)
-  {
-    if (csvee == NULL)
-    {
+	int csvee_field_exist(Csvee_t *csvee, size_t row, size_t col)
+	{
+		if (csvee == NULL)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(NULL_FILE, "File is null\n");
+			csvee_error(NULL_FILE, "File is null\n");
 #endif // CSVEE_DEBUG
-      return 0;
-    }
+			return 0;
+		}
 
-    if (csvee->count < row)
-    {
+		if (csvee->count < row)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
+			csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
 #endif // CSVEE_DEBUG
-      return 0;
-    }
+			return 0;
+		}
 
-    if (csvee->rows[row - 1].count < col)
-    {
+		if (csvee->rows[row - 1].count < col)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(INVALID_FIELD, "Field (%d) : is out of range\n", col);
+			csvee_error(INVALID_FIELD, "Field (%d) : is out of range\n", col);
 #endif // CSVEE_DEBUG
-      return 0;
-    }
-    return 1;
-  };
+			return 0;
+		}
+		return 1;
+	};
 
-  int csvee_field_equal(Cell_t *field, Cell_t *other)
-  {
-    return strcmp(field->value, other->value) == 0;
-  };
+	int csvee_field_equal(Field_t *field, Field_t *other)
+	{
+		return strcmp(field->value, other->value) == 0;
+	};
 
-  int csvee_add_row(Csvee_t *csvee, size_t fields_count, ...)
-  {
-    va_list args;
+	int csvee_add_row(Csvee_t *csvee, size_t fields_count, ...)
+	{
+		va_list args;
 
-    // Initialize the argument list
-    va_start(args, fields_count);
+		// Initialize the argument list
+		va_start(args, fields_count);
 
-    if (csvee->count >= csvee->size)
-    {
-      csvee->size *= 2;
-      csvee->rows = (Row_t *)realloc(csvee->rows, csvee->size * sizeof(Row_t));
-    }
+		if (csvee->count >= csvee->size)
+		{
+			csvee->size *= 2;
+			csvee->rows = (Row_t *)realloc(csvee->rows, csvee->size * sizeof(Row_t));
+		}
 
-    csvee->rows[csvee->count] = csvee_create_row(fields_count);
+		csvee->rows[csvee->count] = csvee_create_row(fields_count);
 
-    // Loop through all the arguments
-    for (size_t i = 0; i < fields_count; i++)
-    {
-      csvee->rows[csvee->count].fields[i] =
-          csvee_create_field(va_arg(args, const char *));
-    }
+		// Loop through all the arguments
+		for (size_t i = 0; i < fields_count; i++)
+		{
+			csvee->rows[csvee->count].fields[i] =
+				csvee_create_field(va_arg(args, const char *));
+		}
 
-    csvee->count++;
+		csvee->count++;
 
-    // Clean up the argument list
-    va_end(args);
-    return 0;
-  };
+		// Clean up the argument list
+		va_end(args);
+		return 0;
+	};
 
-  // Helper function to append formatted text to a string buffer
-  void append_to_buffer(char **buffer, size_t *size, const char *format, ...)
-  {
-    va_list args;
-    va_start(args, format);
-    size_t needed = vsnprintf(NULL, 0, format, args) + 1;
-    va_end(args);
+	// Helper function to append formatted text to a string buffer
+	void append_to_buffer(char **buffer, size_t *size, const char *format, ...)
+	{
+		va_list args;
+		va_start(args, format);
+		size_t needed = vsnprintf(NULL, 0, format, args) + 1;
+		va_end(args);
 
-    *buffer = (char *)realloc(*buffer, *size + needed);
-    va_start(args, format);
-    vsnprintf(*buffer + *size, needed, format, args);
-    va_end(args);
+		*buffer = (char *)realloc(*buffer, *size + needed);
+		va_start(args, format);
+		vsnprintf(*buffer + *size, needed, format, args);
+		va_end(args);
 
-    *size += needed - 1;
-  }
+		*size += needed - 1;
+	}
 
-  int csvee_update_row(Csvee_t *csvee, size_t row, size_t fields_count, ...)
-  {
-    va_list args;
-    va_start(args, fields_count);
+	int csvee_update_row(Csvee_t *csvee, size_t row, size_t fields_count, ...)
+	{
+		va_list args;
+		va_start(args, fields_count);
 
-    for (size_t i = 0; i < fields_count; i++)
-    {
-      csvee->rows[row - 1].fields[i].value = strdup(va_arg(args, char *));
-    }
+		for (size_t i = 0; i < fields_count; i++)
+		{
+			csvee->rows[row - 1].fields[i].value = strdup(va_arg(args, char *));
+		}
 
-    va_end(args);
-    return 1;
-  };
+		va_end(args);
+		return 1;
+	};
 
-  int csvee_delete_row(Csvee_t *csvee, size_t row)
-  {
-    csvee_free_row(&csvee->rows[row - 1]);
-    return 1;
-  };
+	int csvee_delete_row(Csvee_t *csvee, size_t row)
+	{
+		csvee_free_row(&csvee->rows[row - 1]);
+		return 1;
+	};
 
-  int csvee_row_exist(Csvee_t *csvee, size_t row)
-  {
-    if (csvee->count < row)
-    {
+	int csvee_row_exist(Csvee_t *csvee, size_t row)
+	{
+		if (csvee->count < row)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
+			csvee_error(INVALID_ROW, "Row (%d) : is out of range\n", row);
 #endif // CSVEE_DEBUG
-      return 0;
-    }
-    return 1;
-  };
+			return 0;
+		}
+		return 1;
+	};
 
-  int csvee_row_equal(Row_t *row, Row_t *other)
-  {
-    if (row->count != other->count)
-    {
-      return 0;
-    }
+	int csvee_row_equal(Row_t *row, Row_t *other)
+	{
+		if (row->count != other->count)
+		{
+			return 0;
+		}
 
-    for (size_t i = 0; i < row->count; i++)
-    {
-      if (!csvee_field_equal(&row->fields[i], &other->fields[i]))
-      {
-        return 0;
-      }
-    }
+		for (size_t i = 0; i < row->count; i++)
+		{
+			if (!csvee_field_equal(&row->fields[i], &other->fields[i]))
+			{
+				return 0;
+			}
+		}
 
-    return 1;
-  };
+		return 1;
+	};
 
-  Csvee_t csvee_read_from_file(const char *filename)
-  {
-    Csvee_t csvee = csvee_create_csv(CSVEE_SEPERATOR);
+	Csvee_t csvee_read_from_file(const char *filename)
+	{
+		Csvee_t csvee = csvee_create_csv(CSVEE_SEPERATOR);
 
-    FILE *file = fopen(filename, "r");
-    if (!file)
-    {
+		FILE *file = fopen(filename, "r");
+		if (!file)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(NULL_FILE, "Could not open file %s\n", filename);
+			csvee_error(NULL_FILE, "Could not open file %s\n", filename);
 #endif // CSVEE_DEBUG
 
-      return csvee;
-    }
+			return csvee;
+		}
 
-    char line[MAX_LINE_LENGTH];
-    // size_t row_capacity = 10;
-    size_t col_capacity = 10;
+		char line[MAX_LINE_LENGTH];
+		// size_t row_capacity = 10;
+		size_t col_capacity = 10;
 
-    // csvee.rows = (Row_t *)malloc(csvee.size * sizeof(Row_t));
+		// csvee.rows = (Row_t *)malloc(csvee.size * sizeof(Row_t));
 
-    while (fgets(line, sizeof(line), file))
-    {
-      if (csvee.count >= csvee.size)
-      {
-        csvee.size *= 2;
-        csvee.rows = (Row_t *)realloc(csvee.rows, csvee.size * sizeof(Row_t));
-      }
+		while (fgets(line, sizeof(line), file))
+		{
+			if (csvee.count >= csvee.size)
+			{
+				csvee.size *= 2;
+				csvee.rows = (Row_t *)realloc(csvee.rows, csvee.size * sizeof(Row_t));
+			}
 
-      Row_t row = csvee_create_row(col_capacity);
-      char field[MAX_FIELD_LENGTH];
-      size_t field_index = 0;
-      size_t col_count = 0;
-      bool in_quotes = false;
+			Row_t row = csvee_create_row(col_capacity);
+			char field[MAX_FIELD_LENGTH];
+			size_t field_index = 0;
+			size_t col_count = 0;
+			bool in_quotes = false;
 
-      for (size_t i = 0; i < strlen(line); ++i)
-      {
-        char ch = line[i];
-        if (ch == '"' && (i == 0 || line[i - 1] != '\\'))
-        {
-          in_quotes = !in_quotes;
-        }
-        else if (ch == CSVEE_SEPERATOR && !in_quotes)
-        {
-          field[field_index] = '\0';
-          row.fields[col_count] = csvee_create_field(field);
-          col_count++;
-          field_index = 0;
+			for (size_t i = 0; i < strlen(line); ++i)
+			{
+				char ch = line[i];
+				if (ch == '"' && (i == 0 || line[i - 1] != '\\'))
+				{
+					in_quotes = !in_quotes;
+				}
+				else if (ch == CSVEE_SEPERATOR && !in_quotes)
+				{
+					field[field_index] = '\0';
+					row.fields[col_count] = csvee_create_field(field);
+					col_count++;
+					field_index = 0;
 
-          if (col_count >= col_capacity)
-          {
-            col_capacity *= 2;
-            row.fields =
-                (Cell_t *)realloc(row.fields, col_capacity * sizeof(Cell_t));
-          }
-        }
-        else if (ch == '\n')
-        {
-          ++i; // to skip the newline charater
-        }
-        else
-        {
-          field[field_index++] = ch;
-        }
-      }
-      field[field_index] = '\0';
-      row.fields[col_count] = csvee_create_field(field);
-      col_count++;
+					if (col_count >= col_capacity)
+					{
+						col_capacity *= 2;
+						row.fields =
+							(Field_t *)realloc(row.fields, col_capacity * sizeof(Field_t));
+					}
+				}
+				else if (ch == '\n')
+				{
+					++i; // to skip the newline charater
+				}
+				else
+				{
+					field[field_index++] = ch;
+				}
+			}
+			field[field_index] = '\0';
+			row.fields[col_count] = csvee_create_field(field);
+			col_count++;
 
-      row.count = col_count;
-      csvee.rows[csvee.count] = row;
-      csvee.count++;
-    }
+			row.count = col_count;
+			csvee.rows[csvee.count] = row;
+			csvee.count++;
+		}
 
-    fclose(file);
-    return csvee;
-  }
+		fclose(file);
+		return csvee;
+	}
 
-  bool csvee_write_to_file(const Csvee_t *csvee, const char *filename)
-  {
-    FILE *file = fopen(filename, "w");
+	bool csvee_write_to_file(const Csvee_t *csvee, const char *filename)
+	{
+		FILE *file = fopen(filename, "w");
 
-    if (!file)
-    {
+		if (!file)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(NULL_FILE, "Could not open file %s for writing\n", filename);
+			csvee_error(NULL_FILE, "Could not open file %s for writing\n", filename);
 #endif // CSVEE_DEBUG
-      return false;
-    }
+			return false;
+		}
 
-    char *buffer;
-    size_t size;
-    csvee_csv_str(csvee, &buffer, &size);
+		char *buffer;
+		size_t size;
+		csvee_csv_str(csvee, &buffer, &size);
 
-    fwrite(&buffer, size, 1, file);
-    fclose(file);
-    return true;
-  }
+		fwrite(&buffer, size, 1, file);
+		fclose(file);
+		return true;
+	}
 
-  void csvee_error(CsvError_t error, const char *format, ...)
-  {
-    if (format == NULL)
-      fprintf(stderr, "CSVEE [%i] : %s \n", error, csvee_error_name(error));
-    else
-    {
-      va_list args;
+	void csvee_error(CsvError_t error, const char *format, ...)
+	{
+		if (format == NULL)
+			fprintf(stderr, "CSVEE [%i] : %s \n", error, csvee_error_name(error));
+		else
+		{
+			va_list args;
 
-      va_start(args, format);
+			va_start(args, format);
 
-      fprintf(stderr, "CSVEE [%i] :", error);
-      vprintf(format, args);
+			fprintf(stderr, "CSVEE [%i] :", error);
+			vprintf(format, args);
 
-      // Clean up the argument list
-      va_end(args);
-    }
-  };
+			// Clean up the argument list
+			va_end(args);
+		}
+	};
 
-  const char *csvee_error_name(CsvError_t error)
-  {
-    switch (error)
-    {
-      CASEFY_ERROR(UNKNOWN);
+	const char *csvee_error_name(CsvError_t error)
+	{
+		switch (error)
+		{
+			CASEFY_ERROR(UNKNOWN);
 
-      CASEFY_ERROR(NO_SEPARATOR);
-      CASEFY_ERROR(MISSING_VALUE);
+			CASEFY_ERROR(NO_SEPARATOR);
+			CASEFY_ERROR(MISSING_VALUE);
 
-      CASEFY_ERROR(EMPTY_FIELD);
+			CASEFY_ERROR(EMPTY_FIELD);
 
-      CASEFY_ERROR(INVALID_FIELD);
-      CASEFY_ERROR(INVALID_ROW);
+			CASEFY_ERROR(INVALID_FIELD);
+			CASEFY_ERROR(INVALID_ROW);
 
-      CASEFY_ERROR(INVALID_FILE);
-      CASEFY_ERROR(NULL_FILE);
+			CASEFY_ERROR(INVALID_FILE);
+			CASEFY_ERROR(NULL_FILE);
 
-      CASEFY_ERROR(NULL_FIELD);
-      CASEFY_ERROR(NULL_ROW);
+			CASEFY_ERROR(NULL_FIELD);
+			CASEFY_ERROR(NULL_ROW);
 
-      CASEFY_ERROR(FILE_ERROR);
+			CASEFY_ERROR(FILE_ERROR);
 
-      CASEFY_ERROR(VALUE_NULL);
+			CASEFY_ERROR(VALUE_NULL);
 
-      CASEFY_ERROR(WRONG_CAST);
-    }
-    return "";
-  };
+			CASEFY_ERROR(WRONG_CAST);
+		}
+		return "";
+	};
 
-  void csvee_field_str(const Cell_t *field, char **buffer, size_t *size)
-  {
-    if (field == NULL)
-    {
+	void csvee_field_str(const Field_t *field, char **buffer, size_t *size)
+	{
+		if (field == NULL)
+		{
 #ifdef CSVEE_DEBUG
-      csvee_error(NULL_FIELD, "Field is null.\n");
+			csvee_error(NULL_FIELD, "Field is null.\n");
 #endif // CSVEE_DEBUG
-      return;
-    }
+			return;
+		}
 
-    append_to_buffer(buffer, size, field->value);
-  };
+		append_to_buffer(buffer, size, field->value);
+	};
 
-  void csvee_row_str(const Row_t *row, char sep, char **buffer, size_t *size)
-  {
-    for (size_t i = 0; i < row->count; i++)
-    {
-      csvee_field_str(&row->fields[i], buffer, size);
-      if (i < row->count - 1)
-      {
-        append_to_buffer(buffer, size, "%c", sep);
-      }
-    }
-    append_to_buffer(buffer, size, "\n");
-  };
+	void csvee_row_str(const Row_t *row, char sep, char **buffer, size_t *size)
+	{
+		for (size_t i = 0; i < row->count; i++)
+		{
+			csvee_field_str(&row->fields[i], buffer, size);
+			if (i < row->count - 1)
+			{
+				append_to_buffer(buffer, size, "%c", sep);
+			}
+		}
+		append_to_buffer(buffer, size, "\n");
+	};
 
-  void csvee_csv_str(const Csvee_t *file, char **buffer, size_t *size)
-  {
-    for (size_t i = 0; i < file->count; i++)
-    {
-      csvee_row_str(&file->rows[i], file->sep, buffer, size);
-    }
-  }
+	void csvee_csv_str(const Csvee_t *file, char **buffer, size_t *size)
+	{
+		for (size_t i = 0; i < file->count; i++)
+		{
+			csvee_row_str(&file->rows[i], file->sep, buffer, size);
+		}
+	}
 
-  void csvee_free_field(Cell_t *field) { free(field->value); }
+	void csvee_free_field(Field_t *field) { free(field->value); }
 
-  void csvee_free_row(Row_t *row)
-  {
-    for (size_t i = 0; i < row->count; i++)
-    {
-      csvee_free_field(&row->fields[i]);
-    }
+	void csvee_free_row(Row_t *row)
+	{
+		for (size_t i = 0; i < row->count; i++)
+		{
+			csvee_free_field(&row->fields[i]);
+		}
 
-    row->count = 0;
-    free(row->fields);
-  }
+		row->count = 0;
+		free(row->fields);
+	}
 
-  void csvee_free_csv(Csvee_t *file)
-  {
-    for (size_t i = 0; i < file->count; i++)
-    {
-      csvee_free_row(&file->rows[i]);
-    }
-    file->count = 0;
-    file->size = 0;
-    free(file->rows);
-  }
+	void csvee_free_csv(Csvee_t *file)
+	{
+		for (size_t i = 0; i < file->count; i++)
+		{
+			csvee_free_row(&file->rows[i]);
+		}
+		file->count = 0;
+		file->size = 0;
+		free(file->rows);
+	}
 
 #ifdef __cplusplus
 };
@@ -1266,58 +1335,58 @@ extern "C"
 
 namespace csvee
 {
-  CSVDialect::CSVDialect(char *name, char delimiter, char quotechar, char *lineterminator, bool doublequote, bool skipwhitespace, CSVQuoteType quoting)
-  {
-    m_Dialect.name = name;
-    m_Dialect.quoting = quoting;
-    m_Dialect.delimiter = delimiter;
-    m_Dialect.quotechar = quotechar;
-    m_Dialect.doublequote = doublequote;
-    m_Dialect.lineterminator = lineterminator;
-    m_Dialect.skipwhitespace = skipwhitespace;
-  };
+	CSVDialect::CSVDialect(char *name, char delimiter, char quotechar, char *lineterminator, bool doublequote, bool skipwhitespace, CSVQuoteType quoting)
+	{
+		m_Dialect.name = name;
+		m_Dialect.quoting = quoting;
+		m_Dialect.delimiter = delimiter;
+		m_Dialect.quotechar = quotechar;
+		m_Dialect.doublequote = doublequote;
+		m_Dialect.lineterminator = lineterminator;
+		m_Dialect.skipwhitespace = skipwhitespace;
+	};
 
-  CSVDialect::CSVDialect(std::string name, char delimiter, char quotechar, std::string lineterminator, bool doublequote, bool skipwhitespace, CSVQuoteType quoting)
-  {
-    m_Dialect.name = const_cast<char *>(name.c_str());
-    m_Dialect.quoting = quoting;
-    m_Dialect.delimiter = delimiter;
-    m_Dialect.quotechar = quotechar;
-    m_Dialect.doublequote = doublequote;
-    m_Dialect.lineterminator = const_cast<char *>(lineterminator.c_str());
-    m_Dialect.skipwhitespace = skipwhitespace;
-  };
+	CSVDialect::CSVDialect(std::string name, char delimiter, char quotechar, std::string lineterminator, bool doublequote, bool skipwhitespace, CSVQuoteType quoting)
+	{
+		m_Dialect.name = const_cast<char *>(name.c_str());
+		m_Dialect.quoting = quoting;
+		m_Dialect.delimiter = delimiter;
+		m_Dialect.quotechar = quotechar;
+		m_Dialect.doublequote = doublequote;
+		m_Dialect.lineterminator = const_cast<char *>(lineterminator.c_str());
+		m_Dialect.skipwhitespace = skipwhitespace;
+	};
 
-  CsveeError::CsveeError()
-  {
-    m_ErrType = UNKNOWN;
-    m_Msg = std::string("(") + GetErrName(UNKNOWN) + std::string(") -> ") +
-            std::string("UNKNOWN ERROR TYPE");
-  };
+	CsveeError::CsveeError()
+	{
+		m_ErrType = UNKNOWN;
+		m_Msg = std::string("(") + GetErrName(UNKNOWN) + std::string(") -> ") +
+				std::string("UNKNOWN ERROR TYPE");
+	};
 
-  CsveeError::CsveeError(CsvError_t errorType)
-  {
-    m_ErrType = errorType;
-    m_Msg = std::string("(") + GetErrName(errorType) + std::string(") -> ") +
-            std::string("ERROR MESSAGE EMPTY");
-  };
+	CsveeError::CsveeError(CsvError_t errorType)
+	{
+		m_ErrType = errorType;
+		m_Msg = std::string("(") + GetErrName(errorType) + std::string(") -> ") +
+				std::string("ERROR MESSAGE EMPTY");
+	};
 
-  CsveeError::CsveeError(const std::string &message, CsvError_t errorType)
-  {
-    m_ErrType = errorType;
-    m_Msg =
-        std::string("(") + GetErrName(errorType) + std::string(") -> ") + message;
-  };
+	CsveeError::CsveeError(const std::string &message, CsvError_t errorType)
+	{
+		m_ErrType = errorType;
+		m_Msg =
+			std::string("(") + GetErrName(errorType) + std::string(") -> ") + message;
+	};
 
-  const char *CsveeError::what() const noexcept { return m_Msg.c_str(); };
+	const char *CsveeError::what() const noexcept { return m_Msg.c_str(); };
 
-  CsvError_t CsveeError::GetErrType() const noexcept { return m_ErrType; };
+	CsvError_t CsveeError::GetErrType() const noexcept { return m_ErrType; };
 
-  std::string CsveeError::GetErrName(CsvError_t error) const noexcept
-  {
-    std::string name = csvee_error_name(error);
-    return name;
-  };
+	std::string CsveeError::GetErrName(CsvError_t error) const noexcept
+	{
+		std::string name = csvee_error_name(error);
+		return name;
+	};
 
 } // namespace csvee
 
