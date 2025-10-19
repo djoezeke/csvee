@@ -52,6 +52,8 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #endif //__cplusplus
@@ -393,6 +395,17 @@ typedef enum CSVQuoteType
 
 } CSVQuoteType;
 
+typedef enum CSVValueType
+{
+	CSVEE_UNKNOW_VALUE,
+	CSVEE_NULL_VALUE,	 /**< Empty string */
+	CSV_BOOL_VALUE,		 /**< Boolean value */
+	CSV_DOUBLE_VALUE,	 /**< Floating point value */
+	CSVEE_STRING_VALUE,	 /**< Non-numeric string */
+	CSVEE_INTEGER_VALUE, /**< Integer value */
+
+} CSVValueType;
+
 // Define a structure for a CSV field
 typedef struct CSVDialect_t
 {
@@ -411,39 +424,49 @@ typedef struct CSVDialect_t
 } CSVDialect_t;
 
 // Define a structure for a CSV field
-typedef struct Field_t
+typedef struct CSVField_t
 {
-	struct Field_t *prev;
-	struct Field_t *next;
-	char *value;
+	struct CSVField_t *prev;
+	struct CSVField_t *next;
+	CSVValueType type;
 
-} Field_t;
+	union
+	{
+		int _integer;
+		char *_string;
+		bool _boolean;
+		double _double;
+
+	} value;
+
+} CSVField_t;
 
 // Define a structure for a CSV row
-typedef struct Row_t
+typedef struct CSVRow_t
 {
-	struct Row_t *prev;
-	struct Row_t *next;
-	Field_t *fields;
+	struct CSVRow_t *prev;
+	struct CSVRow_t *next;
+
+	CSVField_t *fields;
 	size_t count;
 
-} Row_t;
+} CSVRow_t;
 
 typedef struct CsvIterator_t
 {
-	const Row_t *ptr;
+	const CSVRow_t *ptr;
 } CsvIterator_t;
 
 typedef struct RowIterator_t
 {
-	const Field_t *ptr;
+	const CSVField_t *ptr;
 } RowIterator_t;
 
 // Define a structure for a CSV file
 typedef struct Csvee_t
 {
 	CSVDialect_t dialect;
-	Row_t *rows;
+	CSVRow_t *rows;
 	size_t count;
 	size_t size;
 	char sep;
@@ -460,8 +483,8 @@ extern "C"
 {
 #endif //__cplusplus
 
-	RowIterator_t csv_row_iter_begin(const Row_t *row);
-	RowIterator_t csv_row_iter_end(const Row_t *row);
+	RowIterator_t csv_row_iter_begin(const CSVRow_t *row);
+	RowIterator_t csv_row_iter_end(const CSVRow_t *row);
 
 	void csv_row_iter_next(RowIterator_t *row_iter);
 	char *csv_row_iter_peek(RowIterator_t *row_iter);
@@ -471,23 +494,23 @@ extern "C"
 	CsvIterator_t csv_csv_iter_end(const Csvee_t *csvee);
 
 	void csv_csv_iter_next(CsvIterator_t *csv_iter);
-	const Row_t *csv_csv_iter_peek(CsvIterator_t *csv_iter);
+	const CSVRow_t *csv_csv_iter_peek(CsvIterator_t *csv_iter);
 	bool csv_csv_iter_equal(CsvIterator_t *begin_iter, CsvIterator_t *end_iter);
 
 	void csv_row_iter_next(RowIterator_t *row_iter);
 	char *csv_row_iter_peek(RowIterator_t *row_iter);
 	bool csv_row_iter_equal(RowIterator_t *begin_iter, RowIterator_t *end_iter);
 
-	double csv_field_to_double(Field_t *field);
-	int csv_field_to_integer(Field_t *field);
-	char *csv_field_to_string(Field_t *field);
-	int csv_field_to_boolean(Field_t *field);
+	double csv_field_to_double(CSVField_t *field);
+	int csv_field_to_integer(CSVField_t *field);
+	char *csv_field_to_string(CSVField_t *field);
+	int csv_field_to_boolean(CSVField_t *field);
 
-	Field_t csvee_create_field(const char *value);
-	Field_t csvee_get_filed(Csvee_t *csvee, size_t row, size_t col);
+	CSVField_t csvee_create_field(const char *value);
+	CSVField_t csvee_get_filed(Csvee_t *csvee, size_t row, size_t col);
 
-	Row_t csvee_create_row(size_t field_count);
-	Row_t csvee_get_row(Csvee_t *csvee, size_t row);
+	CSVRow_t csvee_create_row(size_t field_count);
+	CSVRow_t csvee_get_row(Csvee_t *csvee, size_t row);
 
 	Csvee_t csvee_create_csv(char sep);
 	Csvee_t csvee_copy_csv(const Csvee_t *file);
@@ -496,13 +519,13 @@ extern "C"
 						   const char *value);
 	int csvee_delete_field(Csvee_t *csvee, size_t row, size_t col);
 	int csvee_field_exist(Csvee_t *csvee, size_t row, size_t col);
-	int csvee_field_equal(Field_t *field, Field_t *other);
+	int csvee_field_equal(CSVField_t *field, CSVField_t *other);
 
 	int csvee_add_row(Csvee_t *csvee, size_t fields_count, ...);
 	int csvee_update_row(Csvee_t *csvee, size_t row, size_t fields_count, ...);
 	int csvee_delete_row(Csvee_t *csvee, size_t row);
 	int csvee_row_exist(Csvee_t *csvee, size_t row);
-	int csvee_row_equal(Row_t *row, Row_t *other);
+	int csvee_row_equal(CSVRow_t *row, CSVRow_t *other);
 
 	Csvee_t csvee_read_from_file(const char *filename);
 	bool csvee_write_to_file(const Csvee_t *csvee, const char *filename);
@@ -510,13 +533,13 @@ extern "C"
 	void csvee_error(CsvError_t error, const char *format, ...);
 	const char *csvee_error_name(CsvError_t error);
 
-	void csvee_field_str(const Field_t *field, char **buffer, size_t *size);
-	void csvee_row_str(const Row_t *row, char sep, char **buffer, size_t *size);
+	void csvee_field_str(const CSVField_t *field, char **buffer, size_t *size);
+	void csvee_row_str(const CSVRow_t *row, char sep, char **buffer, size_t *size);
 	void csvee_csv_str(const Csvee_t *csvee, char **buffer, size_t *size);
 
-	void csvee_free_row(Row_t *row);
+	void csvee_free_row(CSVRow_t *row);
 	void csvee_free_csv(Csvee_t *csvee);
-	void csvee_free_field(Field_t *field);
+	void csvee_free_field(CSVField_t *field);
 
 #ifdef __cplusplus
 }
@@ -530,6 +553,45 @@ extern "C"
 
 namespace csvee
 {
+	class CSVField
+	{
+	public:
+		CSVField() = default;
+
+		CSVField(CSVField_t field);
+		CSVField(std::string field);
+		CSVField(std::string_view field);
+
+		operator std::string() const;
+
+		CSVValueType type();
+
+		bool is_int();
+		bool is_num();
+		bool is_bool();
+		bool is_null();
+		bool is_float();
+
+	private:
+		CSVField_t m_Field;
+		std::string_view m_FieldSV;
+	};
+
+	class CSVRow
+	{
+	public:
+		CSVRow() = default;
+
+		CSVRow(std::vector<std::string> row);
+
+		operator std::vector<std::string>() const;
+
+		CSVField operator[](size_t n) const;
+		CSVField operator[](const std::string &) const;
+
+	private:
+		CSVRow_t m_Row;
+	};
 
 	template <class CSVDialect>
 	class Csvee
@@ -548,8 +610,8 @@ namespace csvee
 		CsvIterator_t end() const { return csv_csv_iter_end(&m_file); }
 
 		// Row-level helpers
-		static RowIterator_t row_begin(const Row_t *row) { return csv_row_iter_begin(row); }
-		static RowIterator_t row_end(const Row_t *row) { return csv_row_iter_end(row); }
+		static RowIterator_t row_begin(const CSVRow_t *row) { return csv_row_iter_begin(row); }
+		static RowIterator_t row_end(const CSVRow_t *row) { return csv_row_iter_end(row); }
 
 	private:
 		using dialect = CSVDialect;
@@ -712,7 +774,7 @@ extern "C"
 {
 #endif // __cplusplus
 
-	RowIterator_t csv_row_iter_begin(const Row_t *row)
+	RowIterator_t csv_row_iter_begin(const CSVRow_t *row)
 	{
 		RowIterator_t iter;
 		if (row == NULL || row->count == 0)
@@ -726,7 +788,7 @@ extern "C"
 		return iter;
 	};
 
-	RowIterator_t csv_row_iter_end(const Row_t *row)
+	RowIterator_t csv_row_iter_end(const CSVRow_t *row)
 	{
 		(void)row;
 		RowIterator_t iter;
@@ -786,7 +848,7 @@ extern "C"
 			csv_iter->ptr++;
 	};
 
-	const Row_t *csv_csv_iter_peek(CsvIterator_t *csv_iter)
+	const CSVRow_t *csv_csv_iter_peek(CsvIterator_t *csv_iter)
 	{
 		if (csv_iter == NULL || csv_iter->ptr == NULL)
 			return NULL;
@@ -798,7 +860,7 @@ extern "C"
 		return (begin_iter->ptr == end_iter->ptr);
 	};
 
-	double csv_field_to_double(Field_t *field)
+	double csv_field_to_double(CSVField_t *field)
 	{
 		if (field == NULL)
 		{
@@ -811,7 +873,7 @@ extern "C"
 		return atof(field->value);
 	};
 
-	int csv_field_to_integer(Field_t *field)
+	int csv_field_to_integer(CSVField_t *field)
 	{
 		if (field == NULL)
 		{
@@ -824,7 +886,7 @@ extern "C"
 		return atoi(field->value);
 	};
 
-	char *csv_field_to_string(Field_t *field)
+	char *csv_field_to_string(CSVField_t *field)
 	{
 		if (field == NULL)
 		{
@@ -837,7 +899,7 @@ extern "C"
 		return field->value;
 	};
 
-	int csv_field_to_boolean(Field_t *field)
+	int csv_field_to_boolean(CSVField_t *field)
 	{
 		int ret;
 
@@ -861,16 +923,16 @@ extern "C"
 		return ret;
 	};
 	// Function to create a CSV field
-	Field_t csvee_create_field(const char *value)
+	CSVField_t csvee_create_field(const char *value)
 	{
-		Field_t field;
+		CSVField_t field;
 		field.value = strdup(value);
 		return field;
 	}
 
-	Field_t csvee_get_filed(Csvee_t *csvee, size_t row, size_t col)
+	CSVField_t csvee_get_filed(Csvee_t *csvee, size_t row, size_t col)
 	{
-		Field_t field = csvee_create_field("");
+		CSVField_t field = csvee_create_field("");
 
 		if (csvee->count < row)
 		{
@@ -893,17 +955,17 @@ extern "C"
 	};
 
 	// Function to create a CSV row
-	Row_t csvee_create_row(size_t field_count)
+	CSVRow_t csvee_create_row(size_t field_count)
 	{
-		Row_t row;
-		row.fields = (Field_t *)malloc(field_count * sizeof(Field_t));
+		CSVRow_t row;
+		row.fields = (CSVField_t *)malloc(field_count * sizeof(CSVField_t));
 		row.count = field_count;
 		return row;
 	}
 
-	Row_t csvee_get_row(Csvee_t *csvee, size_t row)
+	CSVRow_t csvee_get_row(Csvee_t *csvee, size_t row)
 	{
-		Row_t nrow = csvee_create_row(0);
+		CSVRow_t nrow = csvee_create_row(0);
 
 		if (csvee->count < row)
 		{
@@ -923,7 +985,7 @@ extern "C"
 		Csvee_t file;
 		file.count = 0;
 		file.size = 5;
-		file.rows = (Row_t *)malloc(file.size * sizeof(Row_t));
+		file.rows = (CSVRow_t *)malloc(file.size * sizeof(CSVRow_t));
 		file.sep = sep;
 		return file;
 	}
@@ -1020,7 +1082,7 @@ extern "C"
 		return 1;
 	};
 
-	int csvee_field_equal(Field_t *field, Field_t *other)
+	int csvee_field_equal(CSVField_t *field, CSVField_t *other)
 	{
 		return strcmp(field->value, other->value) == 0;
 	};
@@ -1035,7 +1097,7 @@ extern "C"
 		if (csvee->count >= csvee->size)
 		{
 			csvee->size *= 2;
-			csvee->rows = (Row_t *)realloc(csvee->rows, csvee->size * sizeof(Row_t));
+			csvee->rows = (CSVRow_t *)realloc(csvee->rows, csvee->size * sizeof(CSVRow_t));
 		}
 
 		csvee->rows[csvee->count] = csvee_create_row(fields_count);
@@ -1102,7 +1164,7 @@ extern "C"
 		return 1;
 	};
 
-	int csvee_row_equal(Row_t *row, Row_t *other)
+	int csvee_row_equal(CSVRow_t *row, CSVRow_t *other)
 	{
 		if (row->count != other->count)
 		{
@@ -1138,17 +1200,17 @@ extern "C"
 		// size_t row_capacity = 10;
 		size_t col_capacity = 10;
 
-		// csvee.rows = (Row_t *)malloc(csvee.size * sizeof(Row_t));
+		// csvee.rows = (CSVRow_t *)malloc(csvee.size * sizeof(CSVRow_t));
 
 		while (fgets(line, sizeof(line), file))
 		{
 			if (csvee.count >= csvee.size)
 			{
 				csvee.size *= 2;
-				csvee.rows = (Row_t *)realloc(csvee.rows, csvee.size * sizeof(Row_t));
+				csvee.rows = (CSVRow_t *)realloc(csvee.rows, csvee.size * sizeof(CSVRow_t));
 			}
 
-			Row_t row = csvee_create_row(col_capacity);
+			CSVRow_t row = csvee_create_row(col_capacity);
 			char field[MAX_FIELD_LENGTH];
 			size_t field_index = 0;
 			size_t col_count = 0;
@@ -1172,7 +1234,7 @@ extern "C"
 					{
 						col_capacity *= 2;
 						row.fields =
-							(Field_t *)realloc(row.fields, col_capacity * sizeof(Field_t));
+							(CSVField_t *)realloc(row.fields, col_capacity * sizeof(CSVField_t));
 					}
 				}
 				else if (ch == '\n')
@@ -1265,7 +1327,7 @@ extern "C"
 		return "";
 	};
 
-	void csvee_field_str(const Field_t *field, char **buffer, size_t *size)
+	void csvee_field_str(const CSVField_t *field, char **buffer, size_t *size)
 	{
 		if (field == NULL)
 		{
@@ -1278,7 +1340,7 @@ extern "C"
 		append_to_buffer(buffer, size, field->value);
 	};
 
-	void csvee_row_str(const Row_t *row, char sep, char **buffer, size_t *size)
+	void csvee_row_str(const CSVRow_t *row, char sep, char **buffer, size_t *size)
 	{
 		for (size_t i = 0; i < row->count; i++)
 		{
@@ -1299,9 +1361,9 @@ extern "C"
 		}
 	}
 
-	void csvee_free_field(Field_t *field) { free(field->value); }
+	void csvee_free_field(CSVField_t *field) { free(field->value); }
 
-	void csvee_free_row(Row_t *row)
+	void csvee_free_row(CSVRow_t *row)
 	{
 		for (size_t i = 0; i < row->count; i++)
 		{
