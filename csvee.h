@@ -587,7 +587,9 @@ namespace csvee
 		using ValueType = CSVRow;
 		using DifferenceType = size_t;
 		using PointerType = ValueType *;
+		using ConstPointerType = const ValueType *;
 		using ReferenceType = ValueType &;
+		using ConstReferenceType = const ValueType &;
 
 	public:
 		CsveeIterator(PointerType ptr);
@@ -619,7 +621,9 @@ namespace csvee
 		using ValueType = CSVField;
 		using DifferenceType = size_t;
 		using PointerType = ValueType *;
+		using ConstPointerType = const ValueType *;
 		using ReferenceType = ValueType &;
+		using ConstReferenceType = const ValueType &;
 
 	public:
 		CSVRowIterator(PointerType ptr);
@@ -648,8 +652,17 @@ namespace csvee
 	class CSVRow
 	{
 	public:
+		using SizeType = size_t;
+		using ValueType = CSVField;
+		using PointerType = ValueType *;
+		using ReferenceType = ValueType &;
+		using ConstPointerType = const PointerType;
+		using ConstReferenceType = const ReferenceType;
+
 		using Iterator = CSVRowIterator;
-		using ReverseIterator = std::reverse_iterator<CSVRowIterator>;
+		using ConstIterator = const Iterator;
+		using ReverseIterator = std::reverse_iterator<Iterator>;
+		using ConstReverseIterator = std::reverse_iterator<ConstIterator>;
 
 	public:
 		CSVRow() = default;
@@ -664,7 +677,7 @@ namespace csvee
 		ReverseIterator rend() const;
 		ReverseIterator rbegin() const noexcept;
 
-		CSVField operator[](size_t n) const;
+		CSVField operator[](SizeType n) const;
 		CSVField operator[](const std::string &) const;
 
 	private:
@@ -678,14 +691,16 @@ namespace csvee
 		using Dialect = CSVDialect;
 
 		template <class OutputStream>
-		using Writer = CSVWriter<OutputStream, Dialect>;
+		using Writer = CsveeWriter<OutputStream, Dialect>;
 
 		template <class InputStream>
-		using Reader = CSVReader<InputStream, Dialect>;
+		using Reader = CsveeReader<InputStream, Dialect>;
 
 	public:
 		using Iterator = CsveeIterator<Csvee<Dialect>>;
+		using ConstIterator = const Iterator;
 		using ReverseIterator = std::reverse_iterator<Iterator>;
+		using ConstReverseIterator = const ReverseIterator;
 
 	public:
 		Csvee();
@@ -693,10 +708,10 @@ namespace csvee
 		Dialect dialect();
 
 		template <typename... T>
-		CSVWriter &WriteHead(const std::vector<T> &record);
+		CsveeWriter &WriteHead(const std::vector<T> &record);
 
 		template <typename... T, size_t Size>
-		CSVWriter &WriteHead(const std::array<T, Size> &record);
+		CsveeWriter &WriteHead(const std::array<T, Size> &record);
 
 		template <typename... T>
 		Csvee<Dialect> *WriteRow(const std::vector<T> &record);
@@ -741,24 +756,17 @@ namespace csvee
 			: CSVDialect("excel-tab", '\t', '"', "\r\n", true, false, CSVEE_QUOTE_MINIMAL) {};
 	};
 
-	class Unix : public CSVDialect
-	{
-	public:
-		Unix()
-			: CSVDialect("unix", ',', '"', "\n", true, false, CSVEE_QUOTE_ALL) {};
-	};
-
 	template <class InputStream, class CSVDiaect>
-	class CSVReader
+	class CsveeReader
 	{
 	public:
-		CSVReader(InputStream &stream, CSVDialect &dialect);
+		CsveeReader(InputStream &stream, CSVDialect &dialect);
 
-		CSVReader(const CSVReader &) = delete;
-		CSVReader &operator=(const CSVReader &) = delete;
+		CsveeReader(const CsveeReader &) = delete;
+		CsveeReader &operator=(const CsveeReader &) = delete;
 
-		CSVReader(CSVReader &&) = default;
-		CSVReader &operator=(CSVReader &&other) = default;
+		CsveeReader(CsveeReader &&) = default;
+		CsveeReader &operator=(CsveeReader &&other) = default;
 
 		Iterator begin() const;
 		Iterator end() const noexcept;
@@ -775,32 +783,36 @@ namespace csvee
 	};
 
 	template <class OutputStream, class CSVDiaect>
-	class CSVWriter
+	class CsveeWriter
 	{
 	public:
-		CSVWriter(OutputStream &stream, CSVDialect &dialect);
+		CsveeWriter(OutputStream &stream, CSVDialect &dialect);
 
-		CSVWriter(const CSVWriter &) = delete;
-		CSVWriter &operator=(const CSVWriter &) = delete;
+		CsveeWriter(const CsveeWriter &) = delete;
+		CsveeWriter &operator=(const CsveeWriter &) = delete;
 
-		CSVWriter(CSVWriter &&) = default;
-		CSVWriter &operator=(CSVWriter &&other) = default;
+		CsveeWriter(CsveeWriter &&) = default;
+		CsveeWriter &operator=(CsveeWriter &&other) = default;
 
-		template <typename... T>
-		CSVWriter &WriteHead(const std::vector<T> &record);
+		template <typename T>
+		CsveeWriter &WriteHead(const std::vector<T> &record);
 
-		template <typename... T, size_t Size>
-		CSVWriter &WriteHead(const std::array<T, Size> &record);
+		template <typename T, size_t Size>
+		CsveeWriter &WriteHead(const std::array<T, Size> &record);
 
-		template <typename... T>
-		CSVWriter &WriteRow(const std::vector<T> &record);
+		template <typename T>
+		CsveeWriter &WriteRow(const std::vector<T> &record);
 
-		template <typename... T, size_t Size>
-		CSVWriter &WriteRow(const std::array<T, Size> &record);
+		template <typename T, size_t Size>
+		CsveeWriter &WriteRow(const std::array<T, Size> &record);
 
-		CSVWriter &operator<<(const Csvee<CSVDialect> &csvee);
+		template <typename T>
+		CsveeWriter &operator<<(const std::vector<T> &record);
 
-		~CSVWriter();
+		template <typename T, size_t Size>
+		CsveeWriter &operator<<(const std::array<T, Size> &record);
+
+		~CsveeWriter();
 
 	private:
 		OutputStream &m_Output;
@@ -854,11 +866,27 @@ namespace csvee
 		CsvError_t m_ErrType;	   //!< The error type.
 	};
 
-	template <class CSVDialect, class OutputType>
-	void writer(Csvee<CSVDialect> &csvee, OutputType csv_output);
+	using csv = Csvee<Excel>;
 
-	template <class CSVDialect, class InputType>
-	Csvee<CSVDialect> reader(InputType csv_input);
+	using tsv = Csvee<ExcelTab>;
+
+	template <class InputStream>
+	using CSVReader = CsveeReader<InputStream, Excel>;
+
+	template <class InputStream>
+	using TSVReader = CsveeReader<InputStream, ExcelTab>;
+
+	template <class OutputStream>
+	using CSVWriter = CsveeWriter<OutputStream, Excel>;
+
+	template <class OutputStream>
+	using TSVWriter = CsveeWriter<OutputStream, ExcelTab>;
+
+	template <class OutputStream, class CSVDialect>
+	CsveeWriter<OutputStream, CSVDialect> writer(OutputStream &output, CSVDialect dialect);
+
+	template <class InputStream, class CSVDialect>
+	CsveeWriter<InputStream, CSVDialect> reader(InputStream &intput, CSVDialect dialect);
 
 }; // namespace csvee
 
