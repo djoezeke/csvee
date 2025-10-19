@@ -52,6 +52,7 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -577,14 +578,52 @@ namespace csvee
 		std::string_view m_FieldSV;
 	};
 
+	class CSVRowIterator
+	{
+	public:
+		using ValueType = CSVField;
+		using DifferenceType = size_t;
+		using PointerType = ValueType *;
+		using ReferenceType = ValueType &;
+
+	public:
+		CSVRowIterator(PointerType ptr);
+		CSVRowIterator(const PointerType ptr);
+
+		PointerType operator->() const;
+		ReferenceType operator*() const;
+		ReferenceType operator[](size_t index);
+
+		CSVRowIterator &operator++();
+		CSVRowIterator operator++(int);
+
+		CSVRowIterator &operator--();
+		CSVRowIterator operator--(int);
+
+		CSVRowIterator operator+(DifferenceType n) const;
+		CSVRowIterator operator-(DifferenceType n) const;
+
+		bool operator==(const CSVRowIterator &other) const noexcept;
+		bool operator!=(const CSVRowIterator &other) const noexcept;
+
+	private:
+		PointerType m_Ptr;
+	};
+
 	class CSVRow
 	{
+	public:
+		using Iterator = CSVRowIterator;
+
 	public:
 		CSVRow() = default;
 
 		CSVRow(std::vector<std::string> row);
 
 		operator std::vector<std::string>() const;
+
+		Iterator begin();
+		Iterator end();
 
 		CSVField operator[](size_t n) const;
 		CSVField operator[](const std::string &) const;
