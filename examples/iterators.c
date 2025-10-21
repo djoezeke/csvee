@@ -13,15 +13,15 @@ int main(void)
         return 1;
     }
 
-    for (size_t r = 0; r < csv->count; ++r)
+    for (CsvIterator_t *ci = csvee_csvee_iter_begin(csv); ci != csvee_csvee_iter_end(csv); csvee_csvee_iter_next(ci))
     {
-        CSVRow_t *row = &csv->rows[r];
-        for (size_t c = 0; c < row->count; ++c)
+        CSVRow_t *row = csvee_csvee_iter_peek(ci);
+        for (RowIterator_t *ri = csvee_row_iter_begin(row); ri != csvee_row_iter_end(row); csvee_row_iter_next(ri))
         {
-            char *s = csvee_field_to_string(&row->fields[c]);
+            char *s = csvee_field_to_string(csvee_row_iter_peek(ri));
             if (s)
             {
-                printf("[%zu,%zu]=%s\n", r, c, s);
+                printf("%s\n", s);
                 free(s);
             }
         }
