@@ -1,6 +1,112 @@
-/* -*- C++ -*- compatibility header. */
+/**
+ * @file csvee.h
+ * @brief Csv/Tsv Reader/Writer Library Header.
+ * @details This file provides API for parsing csv/tsv.
+ * @author Sackey Ezekiel Etrue (djoezeke)
+ * @date Tue 29 10:25:15 Oct GMT 2025
+ * @version 0.1.0
+ * @see https://www.github.com/djoezeke/csvee
+ * @copyright Copyright (c) 2025 Sackey Ezekiel Etrue
+ *
+ * CSVEE: What Csvee Is
+ *
+ * DOCUMENTATION:
+ *
+ * FEATURES:
+ *
+ * FUTURE:
+ *
+ * ISSUES:
+ *
+ * NOTES:
+ *
+ * USAGE:
+ *
+ *   Include this file in whatever places need to refer to it.
+ *
+ *   Do this:
+ *      #define CSVEE_IMPLEMENTATION
+ *
+ *   before you include this file in *one* C or C++ file to create the implementation.
+ *
+ *   i.e. it should look like this:
+ *
+ *      #include ...
+ *      #include ...
+ *      #define CSVEE_IMPLEMENTATION
+ *      #include "csvee.h"
+ *
+ *  Header-file Mode:
+ *
+ *  Implementation Mode:
+ *
+ *
+ * Example usage:
+ * @code
+ * int main(int argc, char *argv[]) {
+ *     return 0;
+ * }
+ * @endcode
+ *
+ * FAQS:
+ *
+ * TODO:
+ *
+ * HELP:
+ *    - See links below.
+ *    - Read top of csvee.c for more details and comments.
+ *
+ *  Has only had a few tests run, may have issues.
+ *
+ *  If having issues compiling/linking/running raise an issue (https://github.com/djoezeke/csvee/issues).
+ *  Please post in https://github.com/djoezeke/csvee/discussions if you cannot find a solution in resources above.
+ *
+ * RESOURCES:
+ * - Homepage ................... https://github.com/djoezeke/csvee
+ * - Releases & changelog ....... https://github.com/djoezeke/csvee/releases
+ * - Issues & support ........... https://github.com/djoezeke/csvee/issues
+ *
+ * LICENSE:
+ *      See end of file for license information.
+ *
+ */
 
 #ifndef DJOEZEKE_CSVEE_H
+
+/**
+ *
+ * SECTIONS: Index of this file
+ *
+ *  [SECTION] Header mess
+ *  [SECTION] Configurable macros
+ *  [SECTION] Platform Defines
+ *  [SECTION] Compiler Defines
+ *  [SECTION] Compiler Warnings
+ *  [SECTION] Imports/Exports
+ *  [SECTION] Data Structures
+ *  [SECTION] C Only Functions
+ *  [SECTION] C++ Only Classes
+ *
+ * ARGPARSER_IMPLEMENTATION
+ *
+ *  INTERNAL:
+ *
+ *  [SECTION] Macro Defines
+ *  [SECTION] Data Structures
+ *  [SECTION] C Only Functions
+ *    - [SECTION] Declarations
+ *    - [SECTION] Definations
+ *  [SECTION] C++ Only Classes
+ *    - [SECTION] Declarations
+ *    - [SECTION] Definations
+ *
+ *  CSVEE:
+ *
+ *  [SECTION] C Only Functions
+ *  [SECTION] C++ Only Classes
+ *
+ */
+
 #define DJOEZEKE_CSVEE_H
 
 /**
@@ -879,7 +985,6 @@ namespace csvee
 
 #endif // DJOEZEKE_CSVEE_H
 
-#define CSVEE_IMPLEMENTATION
 #ifdef CSVEE_IMPLEMENTATION
 
 #pragma region Internal
