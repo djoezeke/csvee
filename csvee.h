@@ -43,9 +43,52 @@
  *
  * Example usage:
  * @code
+ *
+ * # include "csvee.h"
+ *
+ * using namespace csvee;
+ *
  * int main(int argc, char *argv[]) {
- *     return 0;
+ *
+ * 	  ...
+ *
+ *	  CSVReader reader("sample.csv");
+ *
+ *	  for (CSVRow& row: reader) {
+ *		  for (CSVField& field: row) {
+ *			  // By default, get<>() produces a std::string.
+ *			  std::cout << field.get<>() << ...
+ *	  	  }
+ * 	  }
+ *
+ *	  ...
+ *
+ *    return 0;
  * }
+ *
+ * @endcode
+ *
+ * @code
+ *
+ * # include "csvee.h"
+ *
+ * using namespace csvee;
+ *
+ * int main(int argc, char *argv[]) {
+ *
+ * 	  ...
+ *
+ *	  CSVWriter  writer("sample.csv");
+ *
+ *	  writer << vector<string>({ "Name", "Age", "Occupation" }) ;
+ *	  writer << vector<string>({ "John Doe", "30", "Software Engineer" }) ;
+ *	  writer << vector<string>({ "Zeke Cora", "20", "Computer Scientist" }) ;
+ *
+ *	  ...
+ *
+ *    return 0;
+ * }
+ *
  * @endcode
  *
  * FAQS:
@@ -985,6 +1028,12 @@ namespace csvee
 
 #endif // DJOEZEKE_CSVEE_H
 
+/**
+ *
+ * implementation isn't include-guarded, since it might have indirectly
+ * included just the "header" portion
+ *
+ */
 #ifdef CSVEE_IMPLEMENTATION
 
 #pragma region Internal

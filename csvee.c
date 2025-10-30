@@ -38,9 +38,52 @@
  *
  * Example usage:
  * @code
- * int main(int argc, char const *argv[]) {
- *     return 0;
+ *
+ * # include "csvee.h"
+ *
+ * using namespace csvee;
+ *
+ * int main(int argc, char *argv[]) {
+ *
+ * 	  ...
+ *
+ *	  CSVReader reader("sample.csv");
+ *
+ *	  for (CSVRow& row: reader) {
+ *		  for (CSVField& field: row) {
+ *			  // By default, get<>() produces a std::string.
+ *			  std::cout << field.get<>() << ...
+ *	  	  }
+ * 	  }
+ *
+ *	  ...
+ *
+ *    return 0;
  * }
+ *
+ * @endcode
+ *
+ * @code
+ *
+ * # include "csvee.h"
+ *
+ * using namespace csvee;
+ *
+ * int main(int argc, char *argv[]) {
+ *
+ * 	  ...
+ *
+ *	  CSVWriter  writer("sample.csv");
+ *
+ *	  writer << vector<string>({ "Name", "Age", "Occupation" }) ;
+ *	  writer << vector<string>({ "John Doe", "30", "Software Engineer" }) ;
+ *	  writer << vector<string>({ "Zeke Cora", "20", "Computer Scientist" }) ;
+ *
+ *	  ...
+ *
+ *    return 0;
+ * }
+ *
  * @endcode
  *
  * FAQS:
@@ -49,33 +92,12 @@
  *
  * Index of this file:
  *
- *  [SECTION] Header mess
- *  [SECTION] Configurable macros
- *  [SECTION] Platform Defines
- *  [SECTION] Compiler Defines
- *  [SECTION] Compiler Warnings
- *  [SECTION] Imports/Exports
- *  [SECTION] Data Structures
- *  [SECTION] C Only Functions
- *  [SECTION] C++ Only Classes
- *
- * CSVEE_IMPLEMENTATION
- *
- *  Internal:
- *
- *  [SECTION] Macro Defines
- *  [SECTION] Data Structures
- *  [SECTION] C Only Functions
- *    - [SECTION] Declarations
- *    - [SECTION] Definations
- *  [SECTION] C++ Only Classes
- *    - [SECTION] Declarations
- *    - [SECTION] Definations
- *
- *  Csvee:
- *
- *  [SECTION] C Only Functions
- *  [SECTION] C++ Only Classes
+ *  [SECTION] Reading C API
+ *  [SECTION] Writing C API
+ *  [SECTION] Read/Write C API
+ *  [SECTION] Reading C++ API
+ *  [SECTION] Writing C++ API
+ *  [SECTION] Read/Write C++ API
  *
  *
  * RESOURCES:
@@ -91,6 +113,13 @@
 #define CSVEE_IMPLEMENTATION
 #include "csvee.h"
 
+//-----------------------------------------------------------------------------
+// [SECTION] C Examples
+//-----------------------------------------------------------------------------
+
+/**
+ * Reading CSV
+ */
 #if 0
 
 int main(int argc, char const *argv[])
@@ -101,6 +130,9 @@ int main(int argc, char const *argv[])
 
 #endif
 
+/**
+ * Writing CSV
+ */
 #if 0
 
 int main(int argc, char const *argv[])
@@ -110,6 +142,80 @@ int main(int argc, char const *argv[])
 }
 
 #endif
+
+/**
+ * Reading/Writing CSV
+ */
+#if 0
+
+int main(int argc, char const *argv[])
+{
+
+    return 0;
+}
+
+#endif
+
+//-----------------------------------------------------------------------------
+// [SECTION] C++ Examples
+//-----------------------------------------------------------------------------
+
+#ifdef __cplusplus
+
+/**
+ * Reading CSV
+ */
+#if 0
+
+#include "csvee.h"
+
+using namespace csvee;
+
+
+int main(int argc, char const *argv[])
+{
+
+    CSVReader reader("csv/sample.csv");
+    
+    for (CSVRow& row: reader) {
+        for (CSVField& field: row) {
+            // By default, get<>() produces a std::string.
+            std::cout << field.get<>() << std::end;
+        }
+    }
+
+    return 0;
+}
+
+#endif
+
+/**
+ * Writing CSV
+ */
+#if 0
+
+int main(int argc, char const *argv[])
+{
+
+    return 0;
+}
+
+#endif
+
+/**
+ * Reading/Writing CSV
+ */
+#if 0
+
+int main(int argc, char const *argv[])
+{
+
+    return 0;
+}
+
+#endif
+
+#endif // __cplusplus
 
 /**
  * LICENSE: MIT License
