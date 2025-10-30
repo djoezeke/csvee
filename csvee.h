@@ -56,8 +56,8 @@
  *
  *	  for (CSVRow& row: reader) {
  *		  for (CSVField& field: row) {
- *			  // By default, get<>() produces a std::string.
- *			  std::cout << field.get<>() << ...
+ *			  // By default, Get<>() produces a std::string.
+ *			  std::cout << field.Get<>() << ...
  *	  	  }
  * 	  }
  *
@@ -84,7 +84,7 @@
  *	  writer << vector<string>({ "John Doe", "30", "Software Engineer" }) ;
  *	  writer << vector<string>({ "Zeke Cora", "20", "Computer Scientist" }) ;
  *
- *	  ...
+ *	  ... 
  *
  *    return 0;
  * }
@@ -723,19 +723,105 @@ namespace csvee
 	public:
 		CSVField() = default;
 
-		CSVField(CSVField_t field);
-		CSVField(std::string field);
-		CSVField(std::string_view field);
+		CSVField(CSVField_t field)
+		{
+			m_Field = field;
+			if (m_Field.type == CSVEE_STRING && m_Field.value._string)
+				m_FieldSV = std::string_view(m_Field.value._string);
+			else
+				m_FieldSV = std::string_view();
+		};
 
-		operator std::string() const;
+		CSVField(std::string field)
+		{
+			m_Field.type = CSVEE_STRING;
+			m_Field.value._string = strdup(field.c_str());
+			m_FieldSV = std::string_view(m_Field.value._string);
+		};
 
-		CSVData_t type();
+		CSVField(CSVField_t *field)
+		{
+			CSVField_t f = {.type = field->type, .value = field->value};
+			m_Field = f;
+			if (m_Field.type == CSVEE_STRING && m_Field.value._string)
+				m_FieldSV = std::string_view(m_Field.value._string);
+			else
+				m_FieldSV = std::string_view();
+		};
 
-		bool is_int();
-		bool is_num();
-		bool is_bool();
-		bool is_null();
-		bool is_float();
+		CSVField(std::string_view field)
+		{
+			m_Field.type = CSVEE_STRING;
+			m_Field.value._string = (char *)malloc(field.size() + 1);
+			if (m_Field.value._string)
+			{
+				memcpy(m_Field.value._string, field.data(), field.size());
+				m_Field.value._string[field.size()] = '\0';
+				m_FieldSV = std::string_view(m_Field.value._string);
+			}
+			else
+			{
+				m_FieldSV = std::string_view();
+			}
+		};
+
+		operator std::string() const
+		{
+			char *s = csvee_field_to_string(const_cast<CSVField_t *>(&m_Field));
+			if (!s)
+				return std::string();
+			std::string out(s);
+			free(s);
+			return out;
+		};
+
+		std::string String() const
+		{
+			char *s = csvee_field_to_string(const_cast<CSVField_t *>(&m_Field));
+			if (!s)
+				return std::string();
+			std::string out(s);
+			free(s);
+			return out;
+		}
+
+		template <typename T>
+		T Get() {};
+
+		CSVData_t Type()
+		{
+			return m_Field.type;
+		};
+
+		bool IsNull()
+		{
+			return Type() == CSVEE_NULL;
+		};
+
+		bool IsFloat()
+		{
+			return Type() == CSVEE_DOUBLE;
+		};
+
+		bool IsString()
+		{
+			return Type() == CSVEE_STRING;
+		};
+
+		bool IsInteger()
+		{
+			return Type() == CSVEE_INTEGER;
+		};
+
+		bool IsNumber()
+		{
+			return Type() == CSVEE_INTEGER || Type() == CSVEE_DOUBLE;
+		};
+
+		bool IsBoolean()
+		{
+			return Type() == CSVEE_BOOL;
+		};
 
 	private:
 		CSVField_t m_Field;
@@ -760,7 +846,7 @@ namespace csvee
 			Iterator(const CSVRow *row)
 				: m_Parent(row), m_Index(0)
 			{
-				if (m_Index < (int)this->m_Parent->size())
+				if (m_Index < (int)this->m_Parent->Size())
 					this->m_Field = std::make_shared<CSVField>(
 						this->m_Parent->operator[](m_Index));
 				else
@@ -770,7 +856,7 @@ namespace csvee
 			Iterator(const CSVRow *row, int index)
 				: m_Parent(row), m_Index(index)
 			{
-				if (index < (int)this->m_Parent->size())
+				if (index < (int)this->m_Parent->Size())
 					this->m_Field = std::make_shared<CSVField>(
 						this->m_Parent->operator[](index));
 				else
@@ -784,15 +870,13 @@ namespace csvee
 
 			ReferenceType operator*() const
 			{
-				return *(this->m_Field.get());
+				return *(this->m_Field);
 			};
-
-			ReferenceType operator[](size_t index);
 
 			Iterator &operator++()
 			{
 				this->m_Index++;
-				if (this->m_Index < (int)this->m_Parent->size())
+				if (this->m_Index < (int)this->m_Parent->Size())
 					this->m_Field = std::make_shared<CSVField>(
 						this->m_Parent->operator[](m_Index));
 				else
@@ -856,12 +940,37 @@ namespace csvee
 	public:
 		CSVRow() = default;
 
-		CSVRow(std::vector<std::string> row);
+		CSVRow(CSVRow_t *row) noexcept;
 
-		size_t size() const noexcept
+		CSVRow(const CSVRow_t &row) noexcept
+			: m_Row(row) {}
+
+		std::string String(char delim = ',') const
+		{
+			std::string out;
+			for (size_t i = 0; i < m_Row.count; ++i)
+			{
+				char *s = csvee_field_to_string(&m_Row.fields[i]);
+				if (s)
+				{
+					if (i)
+						out.push_back(delim);
+					out += s;
+					free(s);
+				}
+			}
+			return out;
+		}
+
+		size_t Size() const noexcept
 		{
 			return m_Row.count;
 		};
+
+		bool Empty() const noexcept
+		{
+			return this->Size() == 0;
+		}
 
 		iterator begin() const
 		{
@@ -870,7 +979,7 @@ namespace csvee
 
 		iterator end() const noexcept
 		{
-			return iterator(this, (int)this->size());
+			return iterator(this, (int)this->Size());
 		};
 
 		reverse_iterator rend() const
@@ -885,11 +994,42 @@ namespace csvee
 
 		CSVField operator[](size_t n) const
 		{
-			if (n < -1 && n > m_Row.count)
-				return CSVField(m_Row.fields[n]);
-			else
+			if (n >= m_Row.count)
 				return CSVField();
+			return CSVField(m_Row.fields[n]);
 		};
+
+		CSVField operator[](const std::string &key) const
+		{
+			try
+			{
+				size_t idx = std::stoul(key);
+				return operator[](idx);
+			}
+			catch (...)
+			{
+			}
+			return CSVField();
+		}
+
+		operator std::vector<std::string>() const
+		{
+			std::vector<std::string> out;
+			for (size_t i = 0; i < m_Row.count; ++i)
+			{
+				char *s = csvee_field_to_string(&m_Row.fields[i]);
+				if (s)
+				{
+					out.emplace_back(s);
+					free(s);
+				}
+				else
+				{
+					out.emplace_back();
+				}
+			}
+			return out;
+		}
 
 	private:
 		CSVRow_t m_Row;
@@ -914,7 +1054,7 @@ namespace csvee
 			Iterator(const CsveeReader *reader)
 				: m_Parent(reader), m_Index(0)
 			{
-				if (m_Index < (int)this->m_Parent->size())
+				if (m_Index < (int)this->m_Parent->Size())
 					this->m_Row = std::make_shared<CSVRow>(
 						this->m_Parent->operator[](m_Index));
 				else
@@ -924,7 +1064,7 @@ namespace csvee
 			Iterator(const CsveeReader *reader, int index)
 				: m_Parent(reader), m_Index(index)
 			{
-				if (m_Index < (int)this->m_Parent->size())
+				if (m_Index < (int)this->m_Parent->Size())
 					this->m_Row = std::make_shared<CSVRow>(
 						this->m_Parent->operator[](index));
 				else
@@ -944,7 +1084,7 @@ namespace csvee
 			Iterator &operator++()
 			{
 				this->m_Index++;
-				if (this->m_Index < (int)this->m_Parent->size())
+				if (this->m_Index < (int)this->m_Parent->Size())
 					this->m_Row = std::make_shared<CSVRow>(
 						this->m_Parent->operator[](m_Index));
 				else
@@ -1021,7 +1161,7 @@ namespace csvee
 
 		iterator end() const noexcept
 		{
-			return iterator(this, (int)this->size());
+			return iterator(this, (int)this->Size());
 		};
 
 		reverse_iterator rend() const
@@ -2054,6 +2194,24 @@ namespace csvee
 		m_Dialect.lineterminator = lineterminator;
 		m_Dialect.skipwhitespace = skipwhitespace;
 	};
+
+	template <>
+	inline std::string CSVField::Get<std::string>()
+	{
+		return std::string(this->m_FieldSV);
+	}
+
+	template <>
+	inline std::string_view CSVField::Get<std::string_view>()
+	{
+		return this->m_FieldSV;
+	}
+
+	inline std::ostream &operator<<(std::ostream &ostream, const CSVField &value)
+	{
+		ostream << std::string(value);
+		return ostream;
+	}
 
 	CsveeError::CsveeError()
 	{

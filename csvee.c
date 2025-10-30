@@ -125,6 +125,20 @@
 int main(int argc, char const *argv[])
 {
 
+    Csvee_t *csvee = csvee_read_from_file("csvfile.csv");
+
+    CSVRow_t *row;
+
+    while (row = csvee_read_next_row(csvee))
+    {
+        CSVField_t *field;
+
+        while (field = csvee_read_next_col(csvee, row))
+        {
+            csvee_field_to_string(field);
+        }
+    }
+
     return 0;
 }
 
@@ -134,6 +148,7 @@ int main(int argc, char const *argv[])
  * Writing CSV
  */
 #if 0
+
 
 int main(int argc, char const *argv[])
 {
@@ -167,10 +182,7 @@ int main(int argc, char const *argv[])
  */
 #if 0
 
-#include "csvee.h"
-
 using namespace csvee;
-
 
 int main(int argc, char const *argv[])
 {
@@ -194,8 +206,16 @@ int main(int argc, char const *argv[])
  */
 #if 0
 
+using namespace csvee;
+
 int main(int argc, char const *argv[])
 {
+
+	CSVWriter  writer("sample.csv");
+
+	writer << vector<string>({ "Name", "Age", "Occupation" }) ;
+	writer << vector<string>({ "John Doe", "30", "Software Engineer" }) ;
+	writer << vector<string>({ "Zeke Cora", "20", "Computer Scientist" }) ;
 
     return 0;
 }
