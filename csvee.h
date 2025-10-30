@@ -690,6 +690,34 @@ extern "C"
 
 namespace csvee
 {
+	class CSVDialect
+	{
+	public:
+		CSVDialect(CSVDialect *dialect);
+		CSVDialect(CSVDialect &dialect);
+		CSVDialect(CSVDialect_t dialect);
+		CSVDialect(CSVDialect_t *dialect);
+		CSVDialect(char *name, char delimiter, char quotechar, char lineterminator, bool doublequote, bool skipwhitespace, CSVQuote_t quoting);
+		CSVDialect(std::string name, char delimiter, char quotechar, char lineterminator, bool doublequote, bool skipwhitespace, CSVQuote_t quoting);
+
+	private:
+		CSVDialect_t m_Dialect;
+	};
+
+	class Excel : public CSVDialect
+	{
+	public:
+		Excel()
+			: CSVDialect("excel", ',', '"', '\n', true, false, CSVEE_QUOTE_MINIMAL) {};
+	};
+
+	class ExcelTab : public CSVDialect
+	{
+	public:
+		ExcelTab()
+			: CSVDialect("excel-tab", '\t', '"', '\n', true, false, CSVEE_QUOTE_MINIMAL) {};
+	};
+
 	class CSVField
 	{
 	public:
@@ -714,108 +742,345 @@ namespace csvee
 		std::string_view m_FieldSV;
 	};
 
-	template <class Csvee>
-	class CsveeIterator
-	{
-	public:
-		using ValueType = CSVRow;
-		using DifferenceType = size_t;
-		using PointerType = ValueType *;
-		using ConstPointerType = const ValueType *;
-		using ReferenceType = ValueType &;
-		using ConstReferenceType = const ValueType &;
-
-	public:
-		CsveeIterator(PointerType ptr);
-		CsveeIterator(const PointerType ptr);
-
-		PointerType operator->() const;
-		ReferenceType operator*() const;
-		ReferenceType operator[](size_t index);
-
-		CsveeIterator &operator++();
-		CsveeIterator operator++(int);
-
-		CsveeIterator &operator--();
-		CsveeIterator operator--(int);
-
-		CsveeIterator operator+(DifferenceType n) const;
-		CsveeIterator operator-(DifferenceType n) const;
-
-		bool operator==(const CsveeIterator &other) const noexcept;
-		bool operator!=(const CsveeIterator &other) const noexcept;
-
-	private:
-		PointerType m_Ptr;
-	};
-
-	class CSVRowIterator
-	{
-	public:
-		using ValueType = CSVField;
-		using DifferenceType = size_t;
-		using PointerType = ValueType *;
-		using ConstPointerType = const ValueType *;
-		using ReferenceType = ValueType &;
-		using ConstReferenceType = const ValueType &;
-
-	public:
-		CSVRowIterator(PointerType ptr);
-		CSVRowIterator(const PointerType ptr);
-
-		PointerType operator->() const;
-		ReferenceType operator*() const;
-		ReferenceType operator[](size_t index);
-
-		CSVRowIterator &operator++();
-		CSVRowIterator operator++(int);
-
-		CSVRowIterator &operator--();
-		CSVRowIterator operator--(int);
-
-		CSVRowIterator operator+(DifferenceType n) const;
-		CSVRowIterator operator-(DifferenceType n) const;
-
-		bool operator==(const CSVRowIterator &other) const noexcept;
-		bool operator!=(const CSVRowIterator &other) const noexcept;
-
-	private:
-		PointerType m_Ptr;
-	};
-
 	class CSVRow
 	{
-	public:
-		using SizeType = size_t;
-		using ValueType = CSVField;
-		using PointerType = ValueType *;
-		using ReferenceType = ValueType &;
-		using ConstPointerType = const PointerType;
-		using ConstReferenceType = const ReferenceType;
+		class Iterator
+		{
+		public:
+			using ValueType = CSVField;
+			using DifferenceType = size_t;
+			using PointerType = std::shared_ptr<ValueType>;
+			using ConstPointerType = const std::shared_ptr<ValueType>;
+			using ReferenceType = ValueType &;
+			using ConstReferenceType = const ValueType &;
 
-		using Iterator = CSVRowIterator;
-		using ConstIterator = const Iterator;
-		using ReverseIterator = std::reverse_iterator<Iterator>;
-		using ConstReverseIterator = std::reverse_iterator<ConstIterator>;
+		public:
+			Iterator() = default;
+
+			Iterator(const CSVRow *row)
+				: m_Parent(row), m_Index(0)
+			{
+				if (m_Index < (int)this->m_Parent->size())
+					this->m_Field = std::make_shared<CSVField>(
+						this->m_Parent->operator[](m_Index));
+				else
+					this->m_Field = nullptr;
+			};
+
+			Iterator(const CSVRow *row, int index)
+				: m_Parent(row), m_Index(index)
+			{
+				if (index < (int)this->m_Parent->size())
+					this->m_Field = std::make_shared<CSVField>(
+						this->m_Parent->operator[](index));
+				else
+					this->m_Field = nullptr;
+			};
+
+			PointerType operator->() const
+			{
+				return this->m_Field;
+			};
+
+			ReferenceType operator*() const
+			{
+				return *(this->m_Field.get());
+			};
+
+			ReferenceType operator[](size_t index);
+
+			Iterator &operator++()
+			{
+				this->m_Index++;
+				if (this->m_Index < (int)this->m_Parent->size())
+					this->m_Field = std::make_shared<CSVField>(
+						this->m_Parent->operator[](m_Index));
+				else
+					this->m_Field = nullptr;
+				return *this;
+			};
+
+			Iterator operator++(int)
+			{
+				auto temp = *this;
+				this->operator++();
+				return temp;
+			};
+
+			Iterator &operator--()
+			{
+				this->m_Index--;
+				this->m_Field = std::make_shared<CSVField>(
+					this->m_Parent->operator[](this->m_Index));
+				return *this;
+			};
+
+			Iterator operator--(int)
+			{
+				auto temp = *this;
+				this->operator--();
+				return temp;
+			};
+
+			Iterator operator+(DifferenceType n) const
+			{
+				return Iterator(this->m_Parent, m_Index + (int)n);
+			};
+
+			Iterator operator-(DifferenceType n) const
+			{
+				return Iterator::operator+(-n);
+			};
+
+			bool operator==(const Iterator &other) const noexcept
+			{
+				return this->m_Index == other.m_Index;
+			};
+
+			bool operator!=(const Iterator &other) const noexcept
+			{
+				return !operator==(other);
+			};
+
+		private:
+			DifferenceType m_Index = 0;		  // Index of current field
+			PointerType m_Field = nullptr;	  // Current field pointed at
+			const CSVRow *m_Parent = nullptr; // Pointer to parent
+		};
+
+	public:
+		using iterator = Iterator;
+		using const_iterator = const iterator;
+		using reverse_iterator = std::reverse_iterator<iterator>;
 
 	public:
 		CSVRow() = default;
 
 		CSVRow(std::vector<std::string> row);
 
-		operator std::vector<std::string>() const;
+		size_t size() const noexcept
+		{
+			return m_Row.count;
+		};
 
-		Iterator begin() const;
-		Iterator end() const noexcept;
+		iterator begin() const
+		{
+			return iterator(this, 0);
+		};
 
-		ReverseIterator rend() const;
-		ReverseIterator rbegin() const noexcept;
+		iterator end() const noexcept
+		{
+			return iterator(this, (int)this->size());
+		};
 
-		CSVField operator[](SizeType n) const;
-		CSVField operator[](const std::string &) const;
+		reverse_iterator rend() const
+		{
+			return reverse_iterator(this->begin());
+		};
+
+		reverse_iterator rbegin() const noexcept
+		{
+			return reverse_iterator(this->end());
+		};
+
+		CSVField operator[](size_t n) const
+		{
+			if (n < -1 && n > m_Row.count)
+				return CSVField(m_Row.fields[n]);
+			else
+				return CSVField();
+		};
 
 	private:
 		CSVRow_t m_Row;
+	};
+
+	template <class InputStream, class CSVDiaect>
+	class CsveeReader
+	{
+		class Iterator
+		{
+		public:
+			using ValueType = CSVRow;
+			using DifferenceType = size_t;
+			using PointerType = std::shared_ptr<ValueType>;
+			using ConstPointerType = const std::shared_ptr<ValueType>;
+			using ReferenceType = ValueType &;
+			using ConstReferenceType = const ValueType &;
+
+		public:
+			Iterator() = default;
+
+			Iterator(const CsveeReader *reader)
+				: m_Parent(reader), m_Index(0)
+			{
+				if (m_Index < (int)this->m_Parent->size())
+					this->m_Row = std::make_shared<CSVRow>(
+						this->m_Parent->operator[](m_Index));
+				else
+					this->m_Row = nullptr;
+			};
+
+			Iterator(const CsveeReader *reader, int index)
+				: m_Parent(reader), m_Index(index)
+			{
+				if (m_Index < (int)this->m_Parent->size())
+					this->m_Row = std::make_shared<CSVRow>(
+						this->m_Parent->operator[](index));
+				else
+					this->m_Row = nullptr;
+			};
+
+			PointerType operator->() const
+			{
+				return this->m_Row;
+			};
+
+			ReferenceType operator*() const
+			{
+				return &(this->m_Row);
+			};
+
+			Iterator &operator++()
+			{
+				this->m_Index++;
+				if (this->m_Index < (int)this->m_Parent->size())
+					this->m_Row = std::make_shared<CSVRow>(
+						this->m_Parent->operator[](m_Index));
+				else
+					this->m_Row = nullptr;
+				return *this;
+			};
+
+			Iterator operator++(int)
+			{
+				auto temp = *this;
+				this->operator++();
+				return temp;
+			};
+
+			Iterator &operator--()
+			{
+				this->m_Index--;
+				this->m_Row = std::make_shared<CSVRow>(
+					this->m_Parent->operator[](this->m_Index));
+				return *this;
+			};
+
+			Iterator operator--(int)
+			{
+				auto temp = *this;
+				this->operator--();
+				return temp;
+			};
+
+			Iterator operator+(DifferenceType n) const
+			{
+				return Iterator(this->m_Parent, m_Index + (int)n);
+			};
+
+			Iterator operator-(DifferenceType n) const
+			{
+				return Iterator::operator+(-n);
+			};
+
+			bool operator==(const Iterator &other) const noexcept
+			{
+				return this->m_Index == other.m_Index;
+			};
+
+			bool operator!=(const Iterator &other) const noexcept
+			{
+				return !operator==(other);
+			};
+
+		private:
+			DifferenceType m_Index = 0;			   // Index of current row
+			PointerType m_Row = nullptr;		   // Current row
+			const CsveeReader *m_Parent = nullptr; // Pointer to parent
+		};
+
+	public:
+		using iterator = Iterator;
+		using const_iterator = const iterator;
+		using reverse_iterator = std::reverse_iterator<iterator>;
+
+	public:
+		CsveeReader(InputStream &stream, CSVDialect &dialect);
+
+		CsveeReader(const CsveeReader &) = delete;
+		CsveeReader &operator=(const CsveeReader &) = delete;
+
+		CsveeReader(CsveeReader &&) = default;
+		CsveeReader &operator=(CsveeReader &&other) = default;
+
+		iterator begin() const
+		{
+			return iterator(this, 0);
+		};
+
+		iterator end() const noexcept
+		{
+			return iterator(this, (int)this->size());
+		};
+
+		reverse_iterator rend() const
+		{
+			return reverse_iterator(this->begin());
+		};
+
+		reverse_iterator rbegin() const noexcept
+		{
+			return reverse_iterator(this->end());
+		};
+
+		CSVRow operator[](size_t n) const
+		{
+			if (n < -1 && n > m_Csvee.count)
+				return CSVRow(m_Csvee.fields[n]);
+			else
+				return CSVRow();
+		};
+
+	private:
+		InputStream &m_Input;
+		Csvee_t m_Csvee;
+	};
+
+	template <class OutputStream, class CSVDiaect>
+	class CsveeWriter
+	{
+	public:
+		CsveeWriter(OutputStream &stream, CSVDialect &dialect);
+
+		CsveeWriter(const CsveeWriter &) = delete;
+		CsveeWriter &operator=(const CsveeWriter &) = delete;
+
+		CsveeWriter(CsveeWriter &&) = default;
+		CsveeWriter &operator=(CsveeWriter &&other) = default;
+
+		template <typename T>
+		CsveeWriter &WriteHead(const std::vector<T> &record);
+
+		template <typename T, size_t Size>
+		CsveeWriter &WriteHead(const std::array<T, Size> &record);
+
+		template <typename T>
+		CsveeWriter &WriteRow(const std::vector<T> &record);
+
+		template <typename T, size_t Size>
+		CsveeWriter &WriteRow(const std::array<T, Size> &record);
+
+		template <typename T>
+		CsveeWriter &operator<<(const std::vector<T> &record);
+
+		template <typename T, size_t Size>
+		CsveeWriter &operator<<(const std::array<T, Size> &record);
+
+		~CsveeWriter();
+
+	private:
+		OutputStream &m_Output;
 	};
 
 	template <class CSVDialect>
@@ -864,92 +1129,6 @@ namespace csvee
 	private:
 		Dialect m_Dialect;
 		Csvee_t m_Csvee;
-	};
-
-	class CSVDialect
-	{
-	public:
-		CSVDialect(char *name, char delimiter, char quotechar, char lineterminator, bool doublequote, bool skipwhitespace, CSVQuote_t quoting);
-		CSVDialect(std::string name, char delimiter, char quotechar, char lineterminator, bool doublequote, bool skipwhitespace, CSVQuote_t quoting);
-
-	private:
-		CSVDialect_t m_Dialect;
-	};
-
-	class Excel : public CSVDialect
-	{
-	public:
-		Excel()
-			: CSVDialect("excel", ',', '"', '\n', true, false, CSVEE_QUOTE_MINIMAL) {};
-	};
-
-	class ExcelTab : public CSVDialect
-	{
-	public:
-		ExcelTab()
-			: CSVDialect("excel-tab", '\t', '"', '\n', true, false, CSVEE_QUOTE_MINIMAL) {};
-	};
-
-	template <class InputStream, class CSVDiaect>
-	class CsveeReader
-	{
-	public:
-		CsveeReader(InputStream &stream, CSVDialect &dialect);
-
-		CsveeReader(const CsveeReader &) = delete;
-		CsveeReader &operator=(const CsveeReader &) = delete;
-
-		CsveeReader(CsveeReader &&) = default;
-		CsveeReader &operator=(CsveeReader &&other) = default;
-
-		Iterator begin() const;
-		Iterator end() const noexcept;
-
-		ReverseIterator rend() const;
-		ReverseIterator rbegin() const noexcept;
-
-	public:
-		using Iterator = CsveeIterator<CSVDialect>;
-		using ReverseIterator = std::reverse_iterator<Iterator>;
-
-	private:
-		InputStream &m_Input;
-	};
-
-	template <class OutputStream, class CSVDiaect>
-	class CsveeWriter
-	{
-	public:
-		CsveeWriter(OutputStream &stream, CSVDialect &dialect);
-
-		CsveeWriter(const CsveeWriter &) = delete;
-		CsveeWriter &operator=(const CsveeWriter &) = delete;
-
-		CsveeWriter(CsveeWriter &&) = default;
-		CsveeWriter &operator=(CsveeWriter &&other) = default;
-
-		template <typename T>
-		CsveeWriter &WriteHead(const std::vector<T> &record);
-
-		template <typename T, size_t Size>
-		CsveeWriter &WriteHead(const std::array<T, Size> &record);
-
-		template <typename T>
-		CsveeWriter &WriteRow(const std::vector<T> &record);
-
-		template <typename T, size_t Size>
-		CsveeWriter &WriteRow(const std::array<T, Size> &record);
-
-		template <typename T>
-		CsveeWriter &operator<<(const std::vector<T> &record);
-
-		template <typename T, size_t Size>
-		CsveeWriter &operator<<(const std::array<T, Size> &record);
-
-		~CsveeWriter();
-
-	private:
-		OutputStream &m_Output;
 	};
 
 	/**
@@ -1021,7 +1200,6 @@ namespace csvee
 
 	template <class InputStream, class CSVDialect>
 	CsveeWriter<InputStream, CSVDialect> reader(InputStream &intput, CSVDialect dialect);
-
 }; // namespace csvee
 
 #endif //__cplusplus
@@ -1838,6 +2016,23 @@ extern "C"
 
 namespace csvee
 {
+
+	CSVDialect::CSVDialect(CSVDialect *dialect) {
+
+	};
+
+	CSVDialect::CSVDialect(CSVDialect &dialect) {
+
+	};
+
+	CSVDialect::CSVDialect(CSVDialect_t dialect) {
+
+	};
+
+	CSVDialect::CSVDialect(CSVDialect_t *dialect) {
+
+	};
+
 	CSVDialect::CSVDialect(char *name, char delimiter, char quotechar, char lineterminator, bool doublequote, bool skipwhitespace, CSVQuote_t quoting)
 	{
 		m_Dialect.name = name;
